@@ -11,6 +11,8 @@ diesel = { workspace = true }
 
 [dev-dependencies]
 rstest.workspace = true
+diesel = { workspace = true, features = ["sqlite"] }
+libsqlite3-sys = { version = "0.28", features = ["bundled"] }
 
 [lints]
 workspace = true

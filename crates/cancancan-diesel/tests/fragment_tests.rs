@@ -85,7 +85,11 @@ fn accessible_by_combines_allow_or_and_deny_not() {
         .can_where(Some("read"), Some("Post"), eq("user_id", DbValue::Int(1)))
         .unwrap();
     ability
-        .can_where(Some("read"), Some("Post"), eq("published", DbValue::Bool(true)))
+        .can_where(
+            Some("read"),
+            Some("Post"),
+            eq("published", DbValue::Bool(true)),
+        )
         .unwrap();
     ability
         .cannot_where(Some("read"), Some("Post"), eq("id", DbValue::Int(9)))
