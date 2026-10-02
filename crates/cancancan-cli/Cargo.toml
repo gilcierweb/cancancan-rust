@@ -1,0 +1,12 @@
+[package]
+name = "cancancan-cli"
+version.workspace = true
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+
+[dependencies]
+clap.workspace = true
+
+[lints]
+workspace = true
