@@ -1,0 +1,16 @@
+[package]
+name = "cancancan-core"
+version.workspace = true
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+
+[dependencies]
+thiserror.workspace = true
+
+[dev-dependencies]
+rstest.workspace = true
+pretty_assertions.workspace = true
+
+[lints]
+workspace = true
