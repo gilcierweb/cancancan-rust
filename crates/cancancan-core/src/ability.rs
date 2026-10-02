@@ -1,12 +1,12 @@
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
+use crate::Condition;
 use crate::actions::Actions;
 use crate::condition::{DbValue, SubjectInstance};
 use crate::error::CanCanError;
 use crate::messages::default_message;
 use crate::rule::{BlockMatcher, Rule};
-use crate::Condition;
 
 /// Subject an ability check runs against.
 #[derive(Clone, Copy)]
@@ -15,18 +15,6 @@ pub enum SubjectRef<'subject> {
     Type(&'subject str),
     /// Check against a concrete instance, mirroring instance checks.
     Instance(&'subject dyn SubjectInstance),
-}
-
-impl<'subject> From<&'subject str> for SubjectRef<'subject> {
-    fn from(type_name: &'subject str) -> Self {
-        Self::Type(type_name)
-    }
-}
-
-impl<'subject> From<&'subject dyn SubjectInstance> for SubjectRef<'subject> {
-    fn from(instance: &'subject dyn SubjectInstance) -> Self {
-        Self::Instance(instance)
-    }
 }
 
 impl std::fmt::Debug for SubjectRef<'_> {
@@ -58,14 +46,14 @@ pub type MessageResolver = Rc<dyn Fn(&str, &str) -> Option<String>>;
 /// struct Post { user_id: i64 }
 ///
 /// impl SubjectInstance for Post {
-///     fn subject_type(&self) -> &str { "Post" }
+///     fn subject_type(&self) -> &'static str { "Post" }
 ///     fn attribute(&self, name: &str) -> Option<DbValue> {
 ///         if name == "user_id" { Some(DbValue::Int(self.user_id)) } else { None }
 ///     }
 /// }
 ///
 /// let mut ability = Ability::new();
-/// ability.allow_where("read", "Post", Condition::Eq {
+/// ability.allow_where(Some("read"), Some("Post"), Condition::Eq {
 ///     field: "user_id".to_owned(),
 ///     value: DbValue::Int(1),
 /// }).unwrap();
@@ -273,52 +261,88 @@ impl Ability {
         Ok(self)
     }
 
-    /// Checks whether `action` is permitted on `subject`.
+    /// Checks whether `action` is permitted on `instance`.
+    ///
+    /// Concrete references coerce automatically: `ability.can("read", &post)`.
     #[must_use]
-    pub fn can<'subject>(
-        &self,
-        action: &str,
-        subject: impl Into<SubjectRef<'subject>>,
-    ) -> bool {
-        self.check(action, subject.into(), None)
+    pub fn can(&self, action: &str, instance: &dyn SubjectInstance) -> bool {
+        self.check(action, SubjectRef::Instance(instance), None)
     }
 
-    /// Checks whether `action` is permitted on `subject` for `attribute`.
+    /// Checks whether `action` is permitted on the `type_name` subject type.
+    ///
+    /// Mirrors class-level `can?` checks: conditions and matchers are not
+    /// evaluated, the first relevant rule behavior decides.
     #[must_use]
-    pub fn can_on_attribute<'subject>(
+    pub fn can_type(&self, action: &str, type_name: &str) -> bool {
+        self.check(action, SubjectRef::Type(type_name), None)
+    }
+
+    /// Checks whether `action` is permitted on either subject form.
+    #[must_use]
+    pub fn can_subject(&self, action: &str, subject: SubjectRef<'_>) -> bool {
+        self.check(action, subject, None)
+    }
+
+    /// Checks whether `action` is permitted on `instance` for `attribute`.
+    #[must_use]
+    pub fn can_on_attribute(
         &self,
         action: &str,
-        subject: impl Into<SubjectRef<'subject>>,
+        instance: &dyn SubjectInstance,
         attribute: &str,
     ) -> bool {
-        self.check(action, subject.into(), Some(attribute))
+        self.check(action, SubjectRef::Instance(instance), Some(attribute))
     }
 
     /// Inverse of [`Ability::can`].
     #[must_use]
-    pub fn cannot<'subject>(
-        &self,
-        action: &str,
-        subject: impl Into<SubjectRef<'subject>>,
-    ) -> bool {
-        !self.can(action, subject)
+    pub fn cannot(&self, action: &str, instance: &dyn SubjectInstance) -> bool {
+        !self.can(action, instance)
     }
 
-    /// Checks permission, returning [`CanCanError::AccessDenied`] on failure.
+    /// Inverse of [`Ability::can_type`].
+    #[must_use]
+    pub fn cannot_type(&self, action: &str, type_name: &str) -> bool {
+        !self.can_type(action, type_name)
+    }
+
+    /// Checks permission on `instance`, returning [`CanCanError::AccessDenied`] on failure.
     ///
     /// # Errors
     ///
     /// Returns [`CanCanError::AccessDenied`] when the check fails.
-    pub fn authorize<'subject>(
+    pub fn authorize(
         &self,
         action: &str,
-        subject: impl Into<SubjectRef<'subject>>,
+        instance: &dyn SubjectInstance,
     ) -> Result<(), CanCanError> {
-        let reference = subject.into();
-        if self.check(action, reference, None) {
+        self.authorize_subject(action, SubjectRef::Instance(instance))
+    }
+
+    /// Checks permission on `type_name`, returning [`CanCanError::AccessDenied`] on failure.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CanCanError::AccessDenied`] when the check fails.
+    pub fn authorize_type(&self, action: &str, type_name: &str) -> Result<(), CanCanError> {
+        self.authorize_subject(action, SubjectRef::Type(type_name))
+    }
+
+    /// Checks permission on either subject form.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CanCanError::AccessDenied`] when the check fails.
+    pub fn authorize_subject(
+        &self,
+        action: &str,
+        subject: SubjectRef<'_>,
+    ) -> Result<(), CanCanError> {
+        if self.check(action, subject, None) {
             return Ok(());
         }
-        let subject_type = match reference {
+        let subject_type = match subject {
             SubjectRef::Type(name) => name.to_owned(),
             SubjectRef::Instance(instance) => instance.subject_type().to_owned(),
         };
@@ -376,17 +400,18 @@ impl Ability {
                 }
             }
         }
-        AbilityPermissions {
-            allowed,
-            denied,
-        }
+        AbilityPermissions { allowed, denied }
     }
 
     /// Merges scalar condition values for building new instances.
     ///
     /// Mirrors `attributes_for`: only plain equalities are collected.
     #[must_use]
-    pub fn attributes_for(&self, action: &str, subject: &dyn SubjectInstance) -> HashMap<String, DbValue> {
+    pub fn attributes_for(
+        &self,
+        action: &str,
+        subject: &dyn SubjectInstance,
+    ) -> HashMap<String, DbValue> {
         let mut attributes = HashMap::new();
         for rule in self.relevant_rules(action, subject.subject_type()) {
             if rule.allows() && rule.matches_instance(subject) {
@@ -466,13 +491,12 @@ impl Ability {
     }
 
     fn check(&self, action: &str, subject: SubjectRef<'_>, attribute: Option<&str>) -> bool {
-        let expanded = self.actions.expand(action);
         let (subject_type, instance) = match subject {
             SubjectRef::Type(name) => (name, None),
             SubjectRef::Instance(found) => (found.subject_type(), Some(found)),
         };
-        for rule in self.relevant_rules(action, subject_type).iter() {
-            debug_assert!(rule.is_relevant(&expanded, subject_type));
+        for rule in &self.relevant_rules(action, subject_type) {
+            debug_assert!(rule.is_relevant(&self.actions, action, subject_type));
             let instance_matches = match instance {
                 Some(found) => rule.matches_instance(found),
                 None => rule.allows(),
@@ -485,10 +509,9 @@ impl Ability {
     }
 
     fn relevant_rules(&self, action: &str, subject_type: &str) -> Vec<&Rule> {
-        let expanded = self.actions.expand(action);
         self.rules
             .iter()
-            .filter(|rule| rule.is_relevant(&expanded, subject_type))
+            .filter(|rule| rule.is_relevant(&self.actions, action, subject_type))
             .rev()
             .collect()
     }
@@ -509,6 +532,17 @@ impl Ability {
 impl Default for Ability {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl std::fmt::Debug for Ability {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("Ability")
+            .field("rules", &self.rules)
+            .field("actions", &self.actions)
+            .field("has_message_resolver", &self.message_resolver.is_some())
+            .finish()
     }
 }
 

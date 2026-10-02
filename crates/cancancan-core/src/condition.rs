@@ -57,7 +57,7 @@ impl From<String> for DbValue {
 /// in memory, mirroring `ConditionsMatcher` from the Ruby gem.
 pub trait SubjectInstance {
     /// Type name used to match the rule subject (e.g. `"Post"`).
-    fn subject_type(&self) -> &str;
+    fn subject_type(&self) -> &'static str;
 
     /// Attribute value by field name, or `None` when the field is absent.
     fn attribute(&self, name: &str) -> Option<DbValue>;
@@ -181,10 +181,28 @@ fn compare_values(left: &DbValue, right: &DbValue) -> Option<std::cmp::Ordering>
     match (left, right) {
         (DbValue::Int(left), DbValue::Int(right)) => Some(left.cmp(right)),
         (DbValue::Float(left), DbValue::Float(right)) => left.partial_cmp(right),
-        (DbValue::Int(left), DbValue::Float(right)) => (*left as f64).partial_cmp(right),
-        (DbValue::Float(left), DbValue::Int(right)) => left.partial_cmp(&(*right as f64)),
+        (DbValue::Int(left), DbValue::Float(right)) => compare_int_float(*left, *right),
+        (DbValue::Float(left), DbValue::Int(right)) => {
+            compare_int_float(*right, *left).map(std::cmp::Ordering::reverse)
+        }
         (DbValue::Str(left), DbValue::Str(right)) => Some(left.cmp(right)),
         (DbValue::Bool(left), DbValue::Bool(right)) => Some(left.cmp(right)),
         _ => None,
+    }
+}
+
+#[allow(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    reason = "bounds are exactly representable powers of two; the truncating cast only runs on integral floats already range-checked above"
+)]
+fn compare_int_float(int_value: i64, float_value: f64) -> Option<std::cmp::Ordering> {
+    if float_value.fract() == 0.0
+        && float_value >= i64::MIN as f64
+        && float_value <= i64::MAX as f64
+    {
+        Some(int_value.cmp(&(float_value as i64)))
+    } else {
+        (int_value as f64).partial_cmp(&float_value)
     }
 }

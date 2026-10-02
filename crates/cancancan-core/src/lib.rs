@@ -1,4 +1,4 @@
-//! Authorization library inspired by the Ruby CanCanCan gem.
+//! Authorization library inspired by the Ruby `CanCanCan` gem.
 //!
 //! [`Ability`] holds ordered `allow`/`deny` rules (the gem `can`/`cannot`).
 //! Checks run against a subject type name or a concrete instance implementing
@@ -12,9 +12,9 @@
 //!
 //! | Ruby gem                | This crate                          |
 //! |-------------------------|-------------------------------------|
-//! | `can` / `cannot`        | [`Ability::allow`] / [`Ability::deny`] (+ `_where`, `_matching`) |
-//! | `can?` / `cannot?`      | [`Ability::can`] / [`Ability::cannot`] |
-//! | `authorize!`            | [`Ability::authorize`]              |
+//! | `can` / `cannot`        | [`Ability::allow`] / [`Ability::deny`] (+ `_where`, `_matching`, `_attributes`) |
+//! | `can?` / `cannot?`      | [`Ability::can`] / [`Ability::cannot`] (instances), [`Ability::can_type`] (classes) |
+//! | `authorize!`            | [`Ability::authorize`] / [`Ability::authorize_type`] |
 //! | `alias_action`          | [`Ability::alias_action`]           |
 //! | `merge`                 | [`Ability::merge`]                  |
 //! | `permissions`           | [`Ability::permissions`]            |

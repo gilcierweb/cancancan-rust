@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use crate::actions::Actions;
 use crate::condition::{Condition, SubjectInstance};
 use crate::error::CanCanError;
 
@@ -223,14 +224,26 @@ impl Rule {
         !self.allow && self.is_catch_all()
     }
 
-    /// Whether this rule applies to `action`, expanding `manage` and aliases.
+    /// Whether this rule matches every action (`allow` without action).
     #[must_use]
-    pub fn matches_action(&self, expanded: &[String]) -> bool {
+    pub fn matches_all_actions(&self) -> bool {
+        self.match_all_actions
+    }
+
+    /// Whether this rule covers `action`, expanding aliases from the rule side.
+    ///
+    /// A rule defined on `read` covers `index` and `show`; `manage` covers all.
+    #[must_use]
+    pub fn covers_action(&self, actions: &Actions, action: &str) -> bool {
         if self.match_all_actions {
             return true;
         }
-        self.actions.iter().any(|action| {
-            action == "manage" || action == "all" || expanded.contains(action)
+        let wanted = action.to_owned();
+        self.actions.iter().any(|defined| {
+            defined == "manage"
+                || defined == "all"
+                || defined == &wanted
+                || actions.expand(defined).contains(&wanted)
         })
     }
 
@@ -247,8 +260,8 @@ impl Rule {
 
     /// Whether this rule is relevant for `action` on `subject_type`.
     #[must_use]
-    pub fn is_relevant(&self, expanded: &[String], subject_type: &str) -> bool {
-        self.matches_action(expanded) && self.matches_subject(subject_type)
+    pub fn is_relevant(&self, actions: &Actions, action: &str, subject_type: &str) -> bool {
+        self.covers_action(actions, action) && self.matches_subject(subject_type)
     }
 
     /// Whether this rule matches `instance` (conditions plus block matcher).
@@ -288,6 +301,6 @@ impl std::fmt::Debug for Rule {
             .field("attributes", &self.attributes)
             .field("condition", &self.condition)
             .field("has_matcher", &self.has_matcher())
-            .finish()
+            .finish_non_exhaustive()
     }
 }
