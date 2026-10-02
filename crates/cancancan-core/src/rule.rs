@@ -51,13 +51,13 @@ impl Rule {
         })
     }
 
-    /// Defines an `allow` rule for `action` on `subject`.
+    /// Defines a `can` rule for `action` on `subject`.
     ///
     /// # Errors
     ///
     /// Returns [`CanCanError::ActionWithoutSubject`] when `subject` is `None`
     /// while `action` is `Some`.
-    pub fn allow(
+    pub fn can(
         action: Option<impl Into<String>>,
         subject: Option<impl Into<String>>,
     ) -> Result<Self, CanCanError> {
@@ -70,13 +70,13 @@ impl Rule {
         )
     }
 
-    /// Defines a `deny` rule for `action` on `subject`.
+    /// Defines a `cannot` rule for `action` on `subject`.
     ///
     /// # Errors
     ///
     /// Returns [`CanCanError::ActionWithoutSubject`] when `subject` is `None`
     /// while `action` is `Some`.
-    pub fn deny(
+    pub fn cannot(
         action: Option<impl Into<String>>,
         subject: Option<impl Into<String>>,
     ) -> Result<Self, CanCanError> {
@@ -89,13 +89,13 @@ impl Rule {
         )
     }
 
-    /// Defines an `allow` rule guarded by declarative `condition`.
+    /// Defines a `can` rule guarded by declarative `condition`.
     ///
     /// # Errors
     ///
     /// Returns [`CanCanError::ActionWithoutSubject`] when `subject` is `None`
     /// while `action` is `Some`.
-    pub fn allow_where(
+    pub fn can_where(
         action: Option<impl Into<String>>,
         subject: Option<impl Into<String>>,
         condition: Condition,
@@ -109,13 +109,13 @@ impl Rule {
         )
     }
 
-    /// Defines a `deny` rule guarded by declarative `condition`.
+    /// Defines a `cannot` rule guarded by declarative `condition`.
     ///
     /// # Errors
     ///
     /// Returns [`CanCanError::ActionWithoutSubject`] when `subject` is `None`
     /// while `action` is `Some`.
-    pub fn deny_where(
+    pub fn cannot_where(
         action: Option<impl Into<String>>,
         subject: Option<impl Into<String>>,
         condition: Condition,
@@ -129,13 +129,13 @@ impl Rule {
         )
     }
 
-    /// Defines an `allow` rule evaluated by `matcher` at check time.
+    /// Defines a `can` rule evaluated by `matcher` at check time.
     ///
     /// # Errors
     ///
     /// Returns [`CanCanError::ActionWithoutSubject`] when `subject` is `None`
     /// while `action` is `Some`.
-    pub fn allow_matching(
+    pub fn can_matching(
         action: Option<impl Into<String>>,
         subject: Option<impl Into<String>>,
         matcher: BlockMatcher,
@@ -149,13 +149,13 @@ impl Rule {
         )
     }
 
-    /// Defines a `deny` rule evaluated by `matcher` at check time.
+    /// Defines a `cannot` rule evaluated by `matcher` at check time.
     ///
     /// # Errors
     ///
     /// Returns [`CanCanError::ActionWithoutSubject`] when `subject` is `None`
     /// while `action` is `Some`.
-    pub fn deny_matching(
+    pub fn cannot_matching(
         action: Option<impl Into<String>>,
         subject: Option<impl Into<String>>,
         matcher: BlockMatcher,

@@ -8,7 +8,7 @@ use std::rc::Rc;
 fn owner_ability() -> Ability {
     let mut ability = Ability::new();
     ability
-        .allow_where(
+        .can_where(
             Some("read"),
             Some("Post"),
             Condition::Eq {
@@ -23,23 +23,23 @@ fn owner_ability() -> Ability {
 #[test]
 fn allows_matching_rule_and_denies_others() {
     let ability = owner_ability();
-    assert!(ability.can("read", &Post::owned(1, 1)));
-    assert!(!ability.can("read", &Post::owned(2, 2)));
+    assert!(ability.check("read", &Post::owned(1, 1)));
+    assert!(!ability.check("read", &Post::owned(2, 2)));
 }
 
 #[test]
-fn cannot_is_the_inverse_of_can() {
+fn negated_check_matches_cannot_query() {
     let ability = owner_ability();
-    assert!(ability.cannot("read", &Post::owned(2, 2)));
-    assert!(!ability.cannot("read", &Post::owned(1, 1)));
+    assert!(!ability.check("read", &Post::owned(2, 2)));
+    assert!(ability.check("read", &Post::owned(1, 1)));
 }
 
 #[test]
 fn last_matching_rule_wins() {
     let mut ability = Ability::new();
-    ability.allow(Some("read"), Some("Post")).unwrap();
+    ability.can(Some("read"), Some("Post")).unwrap();
     ability
-        .deny_where(
+        .cannot_where(
             Some("read"),
             Some("Post"),
             Condition::Eq {
@@ -57,49 +57,49 @@ fn last_matching_rule_wins() {
         published: true,
         ..Post::owned(2, 1)
     };
-    assert!(!ability.can("read", &draft));
-    assert!(ability.can("read", &released));
+    assert!(!ability.check("read", &draft));
+    assert!(ability.check("read", &released));
 }
 
 #[test]
 fn manage_matches_every_action_and_all_matches_every_subject() {
     let mut ability = Ability::new();
-    ability.allow(Some("manage"), Some("all")).unwrap();
+    ability.can(Some("manage"), Some("all")).unwrap();
 
-    assert!(ability.can("destroy", &Post::owned(1, 9)));
-    assert!(ability.can_type("anything", "Anything"));
+    assert!(ability.check("destroy", &Post::owned(1, 9)));
+    assert!(ability.check_type("anything", "Anything"));
 }
 
 #[test]
 fn default_aliases_expand_read_create_and_update() {
     let mut ability = Ability::new();
-    ability.allow(Some("read"), Some("Post")).unwrap();
-    ability.allow(Some("create"), Some("Post")).unwrap();
-    ability.allow(Some("update"), Some("Post")).unwrap();
+    ability.can(Some("read"), Some("Post")).unwrap();
+    ability.can(Some("create"), Some("Post")).unwrap();
+    ability.can(Some("update"), Some("Post")).unwrap();
 
     let post = Post::owned(1, 1);
-    assert!(ability.can("index", &post));
-    assert!(ability.can("show", &post));
-    assert!(ability.can_type("new", "Post"));
-    assert!(ability.can("edit", &post));
-    assert!(!ability.can("destroy", &post));
+    assert!(ability.check("index", &post));
+    assert!(ability.check("show", &post));
+    assert!(ability.check_type("new", "Post"));
+    assert!(ability.check("edit", &post));
+    assert!(!ability.check("destroy", &post));
 }
 
 #[test]
 fn custom_alias_applies_to_checks() {
     let mut ability = Ability::new();
     ability.alias_action(["show"], "preview");
-    ability.allow(Some("preview"), Some("Post")).unwrap();
+    ability.can(Some("preview"), Some("Post")).unwrap();
 
-    assert!(ability.can_type("show", "Post"));
-    assert!(ability.can_type("preview", "Post"));
+    assert!(ability.check_type("show", "Post"));
+    assert!(ability.check_type("preview", "Post"));
 }
 
 #[test]
 fn class_level_check_returns_rule_behavior() {
     let mut ability = Ability::new();
     ability
-        .allow_where(
+        .can_where(
             Some("read"),
             Some("Post"),
             Condition::Eq {
@@ -108,11 +108,11 @@ fn class_level_check_returns_rule_behavior() {
             },
         )
         .unwrap();
-    assert!(ability.can_type("read", "Post"));
+    assert!(ability.check_type("read", "Post"));
 
     let mut denied = Ability::new();
     denied
-        .deny_where(
+        .cannot_where(
             Some("read"),
             Some("Post"),
             Condition::Eq {
@@ -121,14 +121,14 @@ fn class_level_check_returns_rule_behavior() {
             },
         )
         .unwrap();
-    assert!(!denied.can_type("read", "Post"));
+    assert!(!denied.check_type("read", "Post"));
 }
 
 #[test]
 fn block_matcher_decides_at_check_time() {
     let mut ability = Ability::new();
     ability
-        .allow_matching(
+        .can_matching(
             Some("read"),
             Some("Post"),
             Rc::new(|instance| instance.attribute("published") == Some(DbValue::Bool(true))),
@@ -143,15 +143,15 @@ fn block_matcher_decides_at_check_time() {
         published: true,
         ..Post::owned(2, 1)
     };
-    assert!(ability.can("read", &released));
-    assert!(!ability.can("read", &draft));
-    assert!(ability.can_type("read", "Post"));
+    assert!(ability.check("read", &released));
+    assert!(!ability.check("read", &draft));
+    assert!(ability.check_type("read", "Post"));
 }
 
 #[test]
 fn action_without_subject_is_rejected() {
     let mut ability = Ability::new();
-    let result = ability.allow(Some("read"), None);
+    let result = ability.can(Some("read"), None);
     assert_eq!(result.unwrap_err(), CanCanError::ActionWithoutSubject);
 }
 
@@ -189,18 +189,18 @@ fn custom_message_resolver_overrides_default() {
 #[test]
 fn merge_combines_rules_with_last_write_wins() {
     let mut admin = Ability::new();
-    admin.allow(Some("manage"), Some("all")).unwrap();
+    admin.can(Some("manage"), Some("all")).unwrap();
 
     let mut combined = owner_ability();
     combined.merge(&admin);
-    assert!(combined.can("destroy", &Post::owned(9, 9)));
+    assert!(combined.check("destroy", &Post::owned(9, 9)));
 }
 
 #[test]
 fn attributes_for_collects_scalar_equalities() {
     let mut ability = Ability::new();
     ability
-        .allow_where(
+        .can_where(
             Some("create"),
             Some("Post"),
             Condition::And(vec![
@@ -226,14 +226,14 @@ fn attributes_for_collects_scalar_equalities() {
 fn permitted_attributes_add_on_allow_and_remove_on_deny() {
     let mut ability = Ability::new();
     ability
-        .allow_attributes(
+        .can_attributes(
             Some("update"),
             Some("Post"),
             vec!["title".to_owned(), "published".to_owned()],
         )
         .unwrap();
     ability
-        .deny_attributes(Some("update"), Some("Post"), vec!["published".to_owned()])
+        .cannot_attributes(Some("update"), Some("Post"), vec!["published".to_owned()])
         .unwrap();
 
     assert_eq!(
@@ -246,19 +246,19 @@ fn permitted_attributes_add_on_allow_and_remove_on_deny() {
 fn can_on_attribute_respects_attribute_list() {
     let mut ability = Ability::new();
     ability
-        .allow_attributes(Some("update"), Some("Post"), vec!["title".to_owned()])
+        .can_attributes(Some("update"), Some("Post"), vec!["title".to_owned()])
         .unwrap();
 
     let post = Post::owned(1, 1);
-    assert!(ability.can_on_attribute("update", &post, "title"));
-    assert!(!ability.can_on_attribute("update", &post, "user_id"));
+    assert!(ability.check_attribute("update", &post, "title"));
+    assert!(!ability.check_attribute("update", &post, "user_id"));
 }
 
 #[test]
 fn nested_condition_matches_through_association() {
     let mut ability = Ability::new();
     ability
-        .allow_where(
+        .can_where(
             Some("read"),
             Some("Post"),
             Condition::Nested {
@@ -278,15 +278,15 @@ fn nested_condition_matches_through_association() {
         }),
         ..Post::owned(1, 1)
     };
-    assert!(ability.can("read", &with_author));
-    assert!(!ability.can("read", &Post::owned(2, 2)));
+    assert!(ability.check("read", &with_author));
+    assert!(!ability.check("read", &Post::owned(2, 2)));
 }
 
 #[test]
 fn rules_for_query_rejects_block_rules() {
     let mut ability = Ability::new();
     ability
-        .allow_matching(Some("read"), Some("Post"), Rc::new(|_| true))
+        .can_matching(Some("read"), Some("Post"), Rc::new(|_| true))
         .unwrap();
     assert_eq!(
         ability.rules_for_query("read", "Post").unwrap_err(),
@@ -307,9 +307,9 @@ fn rules_for_query_returns_declarative_rules() {
 fn permissions_report_splits_allow_and_deny() {
     let mut ability = Ability::new();
     ability
-        .allow_attributes(Some("update"), Some("Post"), vec!["title".to_owned()])
+        .can_attributes(Some("update"), Some("Post"), vec!["title".to_owned()])
         .unwrap();
-    ability.deny(Some("destroy"), Some("Post")).unwrap();
+    ability.cannot(Some("destroy"), Some("Post")).unwrap();
 
     let permissions = ability.permissions();
     assert_eq!(
@@ -333,7 +333,7 @@ fn map_subject_covers_dynamic_fields() {
 
     let mut ability = Ability::new();
     ability
-        .allow_where(
+        .can_where(
             Some("read"),
             Some("Dashboard"),
             Condition::Eq {
@@ -342,5 +342,5 @@ fn map_subject_covers_dynamic_fields() {
             },
         )
         .unwrap();
-    assert!(ability.can("read", &subject));
+    assert!(ability.check("read", &subject));
 }

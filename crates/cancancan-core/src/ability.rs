@@ -34,9 +34,11 @@ pub type MessageResolver = Rc<dyn Fn(&str, &str) -> Option<String>>;
 
 /// Defines and checks authorization rules.
 ///
-/// Mirrors `CanCan::Ability`: rules are declared with `allow`/`deny`
-/// (the gem `can`/`cannot`), checked with [`Ability::can`],
-/// [`Ability::cannot`] and [`Ability::authorize`]. The last matching rule wins.
+/// Mirrors `CanCan::Ability`: rules are declared with `can`/`cannot`
+/// (plus `_where`, `_matching` and `_attributes` variants), checked with
+/// [`Ability::check`] ([`Ability::check_type`] for classes, `!check` for the
+/// `cannot?` equivalent) and enforced with [`Ability::authorize`].
+/// The last matching rule wins.
 ///
 /// # Example
 ///
@@ -53,13 +55,13 @@ pub type MessageResolver = Rc<dyn Fn(&str, &str) -> Option<String>>;
 /// }
 ///
 /// let mut ability = Ability::new();
-/// ability.allow_where(Some("read"), Some("Post"), Condition::Eq {
+/// ability.can_where(Some("read"), Some("Post"), Condition::Eq {
 ///     field: "user_id".to_owned(),
 ///     value: DbValue::Int(1),
 /// }).unwrap();
 ///
-/// assert!(ability.can("read", &Post { user_id: 1 }));
-/// assert!(!ability.can("read", &Post { user_id: 2 }));
+/// assert!(ability.check("read", &Post { user_id: 1 }));
+/// assert!(!ability.check("read", &Post { user_id: 2 }));
 /// ```
 #[derive(Clone)]
 pub struct Ability {
@@ -101,7 +103,7 @@ impl Ability {
         self
     }
 
-    /// Declares an `allow` rule for `action` on `subject_type`.
+    /// Declares a `can` rule for `action` on `subject_type`.
     ///
     /// Pass `None` for either argument to match everything, mirroring
     /// `can` without arguments.
@@ -110,45 +112,45 @@ impl Ability {
     ///
     /// Returns [`CanCanError::ActionWithoutSubject`] when `action` is `Some`
     /// while `subject_type` is `None`.
-    pub fn allow(
+    pub fn can(
         &mut self,
         action: Option<&str>,
         subject_type: Option<&str>,
     ) -> Result<&mut Self, CanCanError> {
-        let rule = Rule::allow(action.map(str::to_owned), subject_type.map(str::to_owned))?;
+        let rule = Rule::can(action.map(str::to_owned), subject_type.map(str::to_owned))?;
         self.rules.push(rule);
         Ok(self)
     }
 
-    /// Declares a `deny` rule for `action` on `subject_type`.
+    /// Declares a `cannot` rule for `action` on `subject_type`.
     ///
     /// # Errors
     ///
     /// Returns [`CanCanError::ActionWithoutSubject`] when `action` is `Some`
     /// while `subject_type` is `None`.
-    pub fn deny(
+    pub fn cannot(
         &mut self,
         action: Option<&str>,
         subject_type: Option<&str>,
     ) -> Result<&mut Self, CanCanError> {
-        let rule = Rule::deny(action.map(str::to_owned), subject_type.map(str::to_owned))?;
+        let rule = Rule::cannot(action.map(str::to_owned), subject_type.map(str::to_owned))?;
         self.rules.push(rule);
         Ok(self)
     }
 
-    /// Declares an `allow` rule guarded by a declarative `condition`.
+    /// Declares a `can` rule guarded by a declarative `condition`.
     ///
     /// # Errors
     ///
     /// Returns [`CanCanError::ActionWithoutSubject`] when `action` is `Some`
     /// while `subject_type` is `None`.
-    pub fn allow_where(
+    pub fn can_where(
         &mut self,
         action: Option<&str>,
         subject_type: Option<&str>,
         condition: Condition,
     ) -> Result<&mut Self, CanCanError> {
-        let rule = Rule::allow_where(
+        let rule = Rule::can_where(
             action.map(str::to_owned),
             subject_type.map(str::to_owned),
             condition,
@@ -157,19 +159,19 @@ impl Ability {
         Ok(self)
     }
 
-    /// Declares a `deny` rule guarded by a declarative `condition`.
+    /// Declares a `cannot` rule guarded by a declarative `condition`.
     ///
     /// # Errors
     ///
     /// Returns [`CanCanError::ActionWithoutSubject`] when `action` is `Some`
     /// while `subject_type` is `None`.
-    pub fn deny_where(
+    pub fn cannot_where(
         &mut self,
         action: Option<&str>,
         subject_type: Option<&str>,
         condition: Condition,
     ) -> Result<&mut Self, CanCanError> {
-        let rule = Rule::deny_where(
+        let rule = Rule::cannot_where(
             action.map(str::to_owned),
             subject_type.map(str::to_owned),
             condition,
@@ -178,7 +180,7 @@ impl Ability {
         Ok(self)
     }
 
-    /// Declares an `allow` rule evaluated by `matcher` at check time.
+    /// Declares a `can` rule evaluated by `matcher` at check time.
     ///
     /// Matcher rules only run in memory; adapters reject them for queries.
     ///
@@ -186,13 +188,13 @@ impl Ability {
     ///
     /// Returns [`CanCanError::ActionWithoutSubject`] when `action` is `Some`
     /// while `subject_type` is `None`.
-    pub fn allow_matching(
+    pub fn can_matching(
         &mut self,
         action: Option<&str>,
         subject_type: Option<&str>,
         matcher: BlockMatcher,
     ) -> Result<&mut Self, CanCanError> {
-        let rule = Rule::allow_matching(
+        let rule = Rule::can_matching(
             action.map(str::to_owned),
             subject_type.map(str::to_owned),
             matcher,
@@ -201,19 +203,19 @@ impl Ability {
         Ok(self)
     }
 
-    /// Declares a `deny` rule evaluated by `matcher` at check time.
+    /// Declares a `cannot` rule evaluated by `matcher` at check time.
     ///
     /// # Errors
     ///
     /// Returns [`CanCanError::ActionWithoutSubject`] when `action` is `Some`
     /// while `subject_type` is `None`.
-    pub fn deny_matching(
+    pub fn cannot_matching(
         &mut self,
         action: Option<&str>,
         subject_type: Option<&str>,
         matcher: BlockMatcher,
     ) -> Result<&mut Self, CanCanError> {
-        let rule = Rule::deny_matching(
+        let rule = Rule::cannot_matching(
             action.map(str::to_owned),
             subject_type.map(str::to_owned),
             matcher,
@@ -222,40 +224,40 @@ impl Ability {
         Ok(self)
     }
 
-    /// Declares an `allow` rule exposing `attributes` for parameter filtering.
+    /// Declares a `can` rule exposing `attributes` for parameter filtering.
     ///
     /// # Errors
     ///
     /// Returns [`CanCanError::ActionWithoutSubject`] when `action` is `Some`
     /// while `subject_type` is `None`.
-    pub fn allow_attributes(
+    pub fn can_attributes(
         &mut self,
         action: Option<&str>,
         subject_type: Option<&str>,
         attributes: Vec<String>,
     ) -> Result<&mut Self, CanCanError> {
-        let rule = Rule::allow(action.map(str::to_owned), subject_type.map(str::to_owned))?
+        let rule = Rule::can(action.map(str::to_owned), subject_type.map(str::to_owned))?
             .with_attributes(attributes);
         self.rules.push(rule);
         Ok(self)
     }
 
-    /// Declares a `deny` rule exposing `attributes` for parameter filtering.
+    /// Declares a `cannot` rule exposing `attributes` for parameter filtering.
     ///
-    /// Deny rules remove names previously added by `allow` rules in
+    /// `cannot` rules remove names previously added by `can` rules in
     /// [`Ability::permitted_attributes`].
     ///
     /// # Errors
     ///
     /// Returns [`CanCanError::ActionWithoutSubject`] when `action` is `Some`
     /// while `subject_type` is `None`.
-    pub fn deny_attributes(
+    pub fn cannot_attributes(
         &mut self,
         action: Option<&str>,
         subject_type: Option<&str>,
         attributes: Vec<String>,
     ) -> Result<&mut Self, CanCanError> {
-        let rule = Rule::deny(action.map(str::to_owned), subject_type.map(str::to_owned))?
+        let rule = Rule::cannot(action.map(str::to_owned), subject_type.map(str::to_owned))?
             .with_attributes(attributes);
         self.rules.push(rule);
         Ok(self)
@@ -263,10 +265,11 @@ impl Ability {
 
     /// Checks whether `action` is permitted on `instance`.
     ///
-    /// Concrete references coerce automatically: `ability.can("read", &post)`.
+    /// This is the `can?` equivalent. Concrete references coerce
+    /// automatically: `ability.check("read", &post)`.
     #[must_use]
-    pub fn can(&self, action: &str, instance: &dyn SubjectInstance) -> bool {
-        self.check(action, SubjectRef::Instance(instance), None)
+    pub fn check(&self, action: &str, instance: &dyn SubjectInstance) -> bool {
+        self.evaluate(action, SubjectRef::Instance(instance), None)
     }
 
     /// Checks whether `action` is permitted on the `type_name` subject type.
@@ -274,37 +277,25 @@ impl Ability {
     /// Mirrors class-level `can?` checks: conditions and matchers are not
     /// evaluated, the first relevant rule behavior decides.
     #[must_use]
-    pub fn can_type(&self, action: &str, type_name: &str) -> bool {
-        self.check(action, SubjectRef::Type(type_name), None)
+    pub fn check_type(&self, action: &str, type_name: &str) -> bool {
+        self.evaluate(action, SubjectRef::Type(type_name), None)
     }
 
     /// Checks whether `action` is permitted on either subject form.
     #[must_use]
-    pub fn can_subject(&self, action: &str, subject: SubjectRef<'_>) -> bool {
-        self.check(action, subject, None)
+    pub fn check_subject(&self, action: &str, subject: SubjectRef<'_>) -> bool {
+        self.evaluate(action, subject, None)
     }
 
     /// Checks whether `action` is permitted on `instance` for `attribute`.
     #[must_use]
-    pub fn can_on_attribute(
+    pub fn check_attribute(
         &self,
         action: &str,
         instance: &dyn SubjectInstance,
         attribute: &str,
     ) -> bool {
-        self.check(action, SubjectRef::Instance(instance), Some(attribute))
-    }
-
-    /// Inverse of [`Ability::can`].
-    #[must_use]
-    pub fn cannot(&self, action: &str, instance: &dyn SubjectInstance) -> bool {
-        !self.can(action, instance)
-    }
-
-    /// Inverse of [`Ability::can_type`].
-    #[must_use]
-    pub fn cannot_type(&self, action: &str, type_name: &str) -> bool {
-        !self.can_type(action, type_name)
+        self.evaluate(action, SubjectRef::Instance(instance), Some(attribute))
     }
 
     /// Checks permission on `instance`, returning [`CanCanError::AccessDenied`] on failure.
@@ -339,7 +330,7 @@ impl Ability {
         action: &str,
         subject: SubjectRef<'_>,
     ) -> Result<(), CanCanError> {
-        if self.check(action, subject, None) {
+        if self.evaluate(action, subject, None) {
             return Ok(());
         }
         let subject_type = match subject {
@@ -490,7 +481,7 @@ impl Ability {
         &self.rules
     }
 
-    fn check(&self, action: &str, subject: SubjectRef<'_>, attribute: Option<&str>) -> bool {
+    fn evaluate(&self, action: &str, subject: SubjectRef<'_>, attribute: Option<&str>) -> bool {
         let (subject_type, instance) = match subject {
             SubjectRef::Type(name) => (name, None),
             SubjectRef::Instance(found) => (found.subject_type(), Some(found)),

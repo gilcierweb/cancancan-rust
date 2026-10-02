@@ -5,8 +5,8 @@ use common::Post;
 use std::rc::Rc;
 
 #[test]
-fn allow_rule_reports_its_parts() {
-    let rule = Rule::allow_where(
+fn can_rule_reports_its_parts() {
+    let rule = Rule::can_where(
         Some("read".to_owned()),
         Some("Post".to_owned()),
         Condition::Eq {
@@ -25,7 +25,7 @@ fn allow_rule_reports_its_parts() {
 
 #[test]
 fn rule_without_action_matches_everything() {
-    let rule = Rule::allow(None::<String>, None::<String>).unwrap();
+    let rule = Rule::can(None::<String>, None::<String>).unwrap();
     let actions = Actions::new();
     assert!(rule.covers_action(&actions, "destroy"));
     assert!(rule.matches_subject("Anything"));
@@ -35,18 +35,18 @@ fn rule_without_action_matches_everything() {
 #[test]
 fn manage_action_and_all_subject_are_wildcards() {
     let actions = Actions::new();
-    let rule = Rule::allow(Some("manage".to_owned()), Some("Post".to_owned())).unwrap();
+    let rule = Rule::can(Some("manage".to_owned()), Some("Post".to_owned())).unwrap();
     assert!(rule.covers_action(&actions, "destroy"));
     assert!(!rule.matches_subject("Comment"));
 
-    let rule = Rule::allow(Some("read".to_owned()), Some("all".to_owned())).unwrap();
+    let rule = Rule::can(Some("read".to_owned()), Some("all".to_owned())).unwrap();
     assert!(rule.matches_subject("Post"));
 }
 
 #[test]
 fn rule_defined_on_alias_covers_mapped_actions() {
     let actions = Actions::new();
-    let rule = Rule::allow(Some("read".to_owned()), Some("Post".to_owned())).unwrap();
+    let rule = Rule::can(Some("read".to_owned()), Some("Post".to_owned())).unwrap();
     assert!(rule.covers_action(&actions, "index"));
     assert!(rule.covers_action(&actions, "show"));
     assert!(!rule.covers_action(&actions, "destroy"));
@@ -55,17 +55,17 @@ fn rule_defined_on_alias_covers_mapped_actions() {
 }
 
 #[test]
-fn deny_catch_all_is_detected() {
-    let rule = Rule::deny(None::<String>, None::<String>).unwrap();
+fn cannot_catch_all_is_detected() {
+    let rule = Rule::cannot(None::<String>, None::<String>).unwrap();
     assert!(rule.is_deny_catch_all());
 
-    let rule = Rule::allow(None::<String>, None::<String>).unwrap();
+    let rule = Rule::can(None::<String>, None::<String>).unwrap();
     assert!(!rule.is_deny_catch_all());
 }
 
 #[test]
 fn block_matcher_rules_match_through_matcher() {
-    let rule = Rule::allow_matching(
+    let rule = Rule::can_matching(
         Some("read".to_owned()),
         Some("Post".to_owned()),
         Rc::new(|_| true),
@@ -79,29 +79,29 @@ fn block_matcher_rules_match_through_matcher() {
 #[test]
 fn action_without_subject_is_rejected_for_every_constructor() {
     assert_eq!(
-        Rule::allow(Some("read".to_owned()), None::<String>).unwrap_err(),
+        Rule::can(Some("read".to_owned()), None::<String>).unwrap_err(),
         CanCanError::ActionWithoutSubject
     );
     assert_eq!(
-        Rule::deny_where(Some("read".to_owned()), None::<String>, Condition::All,).unwrap_err(),
+        Rule::cannot_where(Some("read".to_owned()), None::<String>, Condition::All,).unwrap_err(),
         CanCanError::ActionWithoutSubject
     );
 }
 
 #[test]
 fn attribute_matching_falls_back_to_behavior() {
-    let plain = Rule::allow(Some("read".to_owned()), Some("Post".to_owned())).unwrap();
+    let plain = Rule::can(Some("read".to_owned()), Some("Post".to_owned())).unwrap();
     assert!(plain.matches_attribute(Some("title")));
     assert!(plain.matches_attribute(None));
 
-    let listed = Rule::allow(Some("read".to_owned()), Some("Post".to_owned()))
+    let listed = Rule::can(Some("read".to_owned()), Some("Post".to_owned()))
         .unwrap()
         .with_attributes(vec!["title".to_owned()]);
     assert!(listed.matches_attribute(Some("title")));
     assert!(!listed.matches_attribute(Some("user_id")));
     assert!(listed.matches_attribute(None));
 
-    let denied = Rule::deny(Some("read".to_owned()), Some("Post".to_owned()))
+    let denied = Rule::cannot(Some("read".to_owned()), Some("Post".to_owned()))
         .unwrap()
         .with_attributes(vec!["title".to_owned()]);
     assert!(!denied.matches_attribute(None));
