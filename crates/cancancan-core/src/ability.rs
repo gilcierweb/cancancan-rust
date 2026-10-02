@@ -252,6 +252,27 @@ impl Ability {
         Ok(self)
     }
 
+    /// Declares a `deny` rule exposing `attributes` for parameter filtering.
+    ///
+    /// Deny rules remove names previously added by `allow` rules in
+    /// [`Ability::permitted_attributes`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CanCanError::ActionWithoutSubject`] when `action` is `Some`
+    /// while `subject_type` is `None`.
+    pub fn deny_attributes(
+        &mut self,
+        action: Option<&str>,
+        subject_type: Option<&str>,
+        attributes: Vec<String>,
+    ) -> Result<&mut Self, CanCanError> {
+        let rule = Rule::deny(action.map(str::to_owned), subject_type.map(str::to_owned))?
+            .with_attributes(attributes);
+        self.rules.push(rule);
+        Ok(self)
+    }
+
     /// Checks whether `action` is permitted on `subject`.
     #[must_use]
     pub fn can<'subject>(
