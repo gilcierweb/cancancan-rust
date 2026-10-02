@@ -36,9 +36,9 @@ pub type MessageResolver = Rc<dyn Fn(&str, &str) -> Option<String>>;
 ///
 /// Mirrors `CanCan::Ability`: rules are declared with `can`/`cannot`
 /// (plus `_where`, `_matching` and `_attributes` variants), checked with
-/// [`Ability::check`] ([`Ability::check_type`] for classes, `!check` for the
-/// `cannot?` equivalent) and enforced with [`Ability::authorize`].
-/// The last matching rule wins.
+/// [`Ability::can_check`] (`!can_check` and the `cannot_check` family cover
+/// `cannot?`, [`Ability::can_check_type`] covers class-level checks) and
+/// enforced with [`Ability::authorize`]. The last matching rule wins.
 ///
 /// # Example
 ///
@@ -60,8 +60,8 @@ pub type MessageResolver = Rc<dyn Fn(&str, &str) -> Option<String>>;
 ///     value: DbValue::Int(1),
 /// }).unwrap();
 ///
-/// assert!(ability.check("read", &Post { user_id: 1 }));
-/// assert!(!ability.check("read", &Post { user_id: 2 }));
+/// assert!(ability.can_check("read", &Post { user_id: 1 }));
+/// assert!(ability.cannot_check("read", &Post { user_id: 2 }));
 /// ```
 #[derive(Clone)]
 pub struct Ability {
@@ -266,9 +266,9 @@ impl Ability {
     /// Checks whether `action` is permitted on `instance`.
     ///
     /// This is the `can?` equivalent. Concrete references coerce
-    /// automatically: `ability.check("read", &post)`.
+    /// automatically: `ability.can_check("read", &post)`.
     #[must_use]
-    pub fn check(&self, action: &str, instance: &dyn SubjectInstance) -> bool {
+    pub fn can_check(&self, action: &str, instance: &dyn SubjectInstance) -> bool {
         self.evaluate(action, SubjectRef::Instance(instance), None)
     }
 
@@ -277,25 +277,54 @@ impl Ability {
     /// Mirrors class-level `can?` checks: conditions and matchers are not
     /// evaluated, the first relevant rule behavior decides.
     #[must_use]
-    pub fn check_type(&self, action: &str, type_name: &str) -> bool {
+    pub fn can_check_type(&self, action: &str, type_name: &str) -> bool {
         self.evaluate(action, SubjectRef::Type(type_name), None)
     }
 
     /// Checks whether `action` is permitted on either subject form.
     #[must_use]
-    pub fn check_subject(&self, action: &str, subject: SubjectRef<'_>) -> bool {
+    pub fn can_check_subject(&self, action: &str, subject: SubjectRef<'_>) -> bool {
         self.evaluate(action, subject, None)
     }
 
     /// Checks whether `action` is permitted on `instance` for `attribute`.
     #[must_use]
-    pub fn check_attribute(
+    pub fn can_check_attribute(
         &self,
         action: &str,
         instance: &dyn SubjectInstance,
         attribute: &str,
     ) -> bool {
         self.evaluate(action, SubjectRef::Instance(instance), Some(attribute))
+    }
+
+    /// Inverse of [`Ability::can_check`], mirroring `cannot?`.
+    #[must_use]
+    pub fn cannot_check(&self, action: &str, instance: &dyn SubjectInstance) -> bool {
+        !self.can_check(action, instance)
+    }
+
+    /// Inverse of [`Ability::can_check_type`], mirroring class-level `cannot?`.
+    #[must_use]
+    pub fn cannot_check_type(&self, action: &str, type_name: &str) -> bool {
+        !self.can_check_type(action, type_name)
+    }
+
+    /// Inverse of [`Ability::can_check_subject`].
+    #[must_use]
+    pub fn cannot_check_subject(&self, action: &str, subject: SubjectRef<'_>) -> bool {
+        !self.can_check_subject(action, subject)
+    }
+
+    /// Inverse of [`Ability::can_check_attribute`].
+    #[must_use]
+    pub fn cannot_check_attribute(
+        &self,
+        action: &str,
+        instance: &dyn SubjectInstance,
+        attribute: &str,
+    ) -> bool {
+        !self.can_check_attribute(action, instance, attribute)
     }
 
     /// Checks permission on `instance`, returning [`CanCanError::AccessDenied`] on failure.

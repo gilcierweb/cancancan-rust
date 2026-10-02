@@ -13,7 +13,7 @@
 //! | Ruby gem                | This crate                          |
 //! |-------------------------|-------------------------------------|
 //! | `can` / `cannot`        | [`Ability::can`] / [`Ability::cannot`] (+ `_where`, `_matching`, `_attributes`) |
-//! | `can?` / `cannot?`      | [`Ability::check`] / `!check` ([`Ability::check_type`] for classes) |
+//! | `can?` / `cannot?`      | [`Ability::can_check`] / [`Ability::cannot_check`] ([`Ability::can_check_type`] for classes) |
 //! | `authorize!`            | [`Ability::authorize`] / [`Ability::authorize_type`] |
 //! | `alias_action`          | [`Ability::alias_action`]           |
 //! | `merge`                 | [`Ability::merge`]                  |

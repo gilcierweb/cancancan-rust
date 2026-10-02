@@ -23,15 +23,15 @@ fn owner_ability() -> Ability {
 #[test]
 fn allows_matching_rule_and_denies_others() {
     let ability = owner_ability();
-    assert!(ability.check("read", &Post::owned(1, 1)));
-    assert!(!ability.check("read", &Post::owned(2, 2)));
+    assert!(ability.can_check("read", &Post::owned(1, 1)));
+    assert!(!ability.can_check("read", &Post::owned(2, 2)));
 }
 
 #[test]
-fn negated_check_matches_cannot_query() {
+fn cannot_check_matches_cannot_query() {
     let ability = owner_ability();
-    assert!(!ability.check("read", &Post::owned(2, 2)));
-    assert!(ability.check("read", &Post::owned(1, 1)));
+    assert!(ability.cannot_check("read", &Post::owned(2, 2)));
+    assert!(!ability.cannot_check("read", &Post::owned(1, 1)));
 }
 
 #[test]
@@ -57,8 +57,8 @@ fn last_matching_rule_wins() {
         published: true,
         ..Post::owned(2, 1)
     };
-    assert!(!ability.check("read", &draft));
-    assert!(ability.check("read", &released));
+    assert!(!ability.can_check("read", &draft));
+    assert!(ability.can_check("read", &released));
 }
 
 #[test]
@@ -66,8 +66,8 @@ fn manage_matches_every_action_and_all_matches_every_subject() {
     let mut ability = Ability::new();
     ability.can(Some("manage"), Some("all")).unwrap();
 
-    assert!(ability.check("destroy", &Post::owned(1, 9)));
-    assert!(ability.check_type("anything", "Anything"));
+    assert!(ability.can_check("destroy", &Post::owned(1, 9)));
+    assert!(ability.can_check_type("anything", "Anything"));
 }
 
 #[test]
@@ -78,11 +78,11 @@ fn default_aliases_expand_read_create_and_update() {
     ability.can(Some("update"), Some("Post")).unwrap();
 
     let post = Post::owned(1, 1);
-    assert!(ability.check("index", &post));
-    assert!(ability.check("show", &post));
-    assert!(ability.check_type("new", "Post"));
-    assert!(ability.check("edit", &post));
-    assert!(!ability.check("destroy", &post));
+    assert!(ability.can_check("index", &post));
+    assert!(ability.can_check("show", &post));
+    assert!(ability.can_check_type("new", "Post"));
+    assert!(ability.can_check("edit", &post));
+    assert!(!ability.can_check("destroy", &post));
 }
 
 #[test]
@@ -91,8 +91,8 @@ fn custom_alias_applies_to_checks() {
     ability.alias_action(["show"], "preview");
     ability.can(Some("preview"), Some("Post")).unwrap();
 
-    assert!(ability.check_type("show", "Post"));
-    assert!(ability.check_type("preview", "Post"));
+    assert!(ability.can_check_type("show", "Post"));
+    assert!(ability.can_check_type("preview", "Post"));
 }
 
 #[test]
@@ -108,7 +108,7 @@ fn class_level_check_returns_rule_behavior() {
             },
         )
         .unwrap();
-    assert!(ability.check_type("read", "Post"));
+    assert!(ability.can_check_type("read", "Post"));
 
     let mut denied = Ability::new();
     denied
@@ -121,7 +121,7 @@ fn class_level_check_returns_rule_behavior() {
             },
         )
         .unwrap();
-    assert!(!denied.check_type("read", "Post"));
+    assert!(!denied.can_check_type("read", "Post"));
 }
 
 #[test]
@@ -143,9 +143,9 @@ fn block_matcher_decides_at_check_time() {
         published: true,
         ..Post::owned(2, 1)
     };
-    assert!(ability.check("read", &released));
-    assert!(!ability.check("read", &draft));
-    assert!(ability.check_type("read", "Post"));
+    assert!(ability.can_check("read", &released));
+    assert!(!ability.can_check("read", &draft));
+    assert!(ability.can_check_type("read", "Post"));
 }
 
 #[test]
@@ -193,7 +193,7 @@ fn merge_combines_rules_with_last_write_wins() {
 
     let mut combined = owner_ability();
     combined.merge(&admin);
-    assert!(combined.check("destroy", &Post::owned(9, 9)));
+    assert!(combined.can_check("destroy", &Post::owned(9, 9)));
 }
 
 #[test]
@@ -250,8 +250,8 @@ fn can_on_attribute_respects_attribute_list() {
         .unwrap();
 
     let post = Post::owned(1, 1);
-    assert!(ability.check_attribute("update", &post, "title"));
-    assert!(!ability.check_attribute("update", &post, "user_id"));
+    assert!(ability.can_check_attribute("update", &post, "title"));
+    assert!(!ability.can_check_attribute("update", &post, "user_id"));
 }
 
 #[test]
@@ -278,8 +278,8 @@ fn nested_condition_matches_through_association() {
         }),
         ..Post::owned(1, 1)
     };
-    assert!(ability.check("read", &with_author));
-    assert!(!ability.check("read", &Post::owned(2, 2)));
+    assert!(ability.can_check("read", &with_author));
+    assert!(!ability.can_check("read", &Post::owned(2, 2)));
 }
 
 #[test]
@@ -342,5 +342,5 @@ fn map_subject_covers_dynamic_fields() {
             },
         )
         .unwrap();
-    assert!(ability.check("read", &subject));
+    assert!(ability.can_check("read", &subject));
 }
