@@ -212,6 +212,12 @@ impl Rule {
         self.matcher.is_some()
     }
 
+    /// Whether this rule carries a raw SQL fragment, mirroring `only_raw_sql?`.
+    #[must_use]
+    pub fn has_raw_sql(&self) -> bool {
+        self.matcher.is_none() && matches!(self.condition, Condition::RawSql(_))
+    }
+
     /// Whether this rule matches without any condition or matcher.
     #[must_use]
     pub fn is_catch_all(&self) -> bool {

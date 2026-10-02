@@ -77,6 +77,18 @@ fn block_matcher_rules_match_through_matcher() {
 }
 
 #[test]
+fn raw_sql_rule_is_detected() {
+    let rule = Rule::can_where(
+        Some("read".to_owned()),
+        Some("Post".to_owned()),
+        Condition::RawSql("published".to_owned()),
+    )
+    .unwrap();
+    assert!(rule.has_raw_sql());
+    assert!(!rule.is_catch_all());
+}
+
+#[test]
 fn action_without_subject_is_rejected_for_every_constructor() {
     assert_eq!(
         Rule::can(Some("read".to_owned()), None::<String>).unwrap_err(),

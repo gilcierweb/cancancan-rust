@@ -103,6 +103,13 @@ pub enum Condition {
         relation: String,
         condition: Box<Condition>,
     },
+    /// Raw SQL fragment, mirroring string conditions in the gem.
+    ///
+    /// Only query adapters evaluate this variant. In-memory [`Condition::matches`]
+    /// never matches it (fail-closed): the gem raises on `can?` with raw SQL,
+    /// and a boolean API cannot raise, so the rule is treated as non-matching
+    /// while queries still enforce it.
+    RawSql(String),
 }
 
 impl Condition {
@@ -142,6 +149,7 @@ impl Condition {
             } => instance
                 .association(relation)
                 .is_some_and(|related| condition.matches(related)),
+            Self::RawSql(_) => false,
         }
     }
 
@@ -172,6 +180,7 @@ impl Condition {
             | Self::Range { .. }
             | Self::IsNull { .. }
             | Self::Not(_)
+            | Self::RawSql(_)
             | Self::Nested { .. } => {}
         }
     }

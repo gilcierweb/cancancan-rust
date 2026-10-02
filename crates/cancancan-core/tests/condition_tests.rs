@@ -135,6 +135,13 @@ fn and_or_not_combinators() {
 }
 
 #[test]
+fn raw_sql_never_matches_in_memory() {
+    let condition = Condition::RawSql("published = TRUE".to_owned());
+    assert!(!condition.matches(&Post::owned(1, 1)));
+    assert!(condition.scalar_attributes().is_empty());
+}
+
+#[test]
 fn scalar_attributes_collects_only_plain_equalities() {
     let condition = Condition::And(vec![
         Condition::Eq {
