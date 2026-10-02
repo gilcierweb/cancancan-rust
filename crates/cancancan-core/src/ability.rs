@@ -475,6 +475,10 @@ impl Ability {
 
     /// Returns relevant rules usable for database queries.
     ///
+    /// Mirrors `relevant_rules_for_query`: `cannot` rules carrying attribute
+    /// lists are rejected (attributes only filter in-memory checks), and a
+    /// relevant block-matcher rule fails the whole query.
+    ///
     /// # Errors
     ///
     /// Returns [`CanCanError::BlockInQuery`] when a relevant rule carries a
@@ -484,11 +488,17 @@ impl Ability {
         action: &str,
         subject_type: &str,
     ) -> Result<Vec<Rule>, CanCanError> {
-        let relevant = self.relevant_rules(action, subject_type);
-        if relevant.iter().any(|rule| rule.has_matcher()) {
-            return Err(CanCanError::BlockInQuery);
+        let mut relevant: Vec<Rule> = Vec::new();
+        for rule in self.relevant_rules(action, subject_type) {
+            if !rule.allows() && !rule.attributes().is_empty() {
+                continue;
+            }
+            if rule.has_matcher() {
+                return Err(CanCanError::BlockInQuery);
+            }
+            relevant.push(rule.clone());
         }
-        Ok(relevant.into_iter().cloned().collect())
+        Ok(relevant)
     }
 
     /// Resolves the denial message for `action` on `subject_type`.

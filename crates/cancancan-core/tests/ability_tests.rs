@@ -296,11 +296,25 @@ fn rules_for_query_rejects_block_rules() {
 }
 
 #[test]
-fn rules_for_query_returns_declarative_rules() {
-    let ability = owner_ability();
+fn rules_for_query_skips_cannot_with_attributes() {
+    let mut ability = Ability::new();
+    ability
+        .can_where(
+            Some("read"),
+            Some("Post"),
+            Condition::Eq {
+                field: "user_id".to_owned(),
+                value: DbValue::Int(1),
+            },
+        )
+        .unwrap();
+    ability
+        .cannot_attributes(Some("read"), Some("Post"), vec!["title".to_owned()])
+        .unwrap();
+
     let rules = ability.rules_for_query("read", "Post").unwrap();
     assert_eq!(rules.len(), 1);
-    assert!(!ability.has_matcher("read", "Post"));
+    assert!(rules[0].allows());
 }
 
 #[test]
