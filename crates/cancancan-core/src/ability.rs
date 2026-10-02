@@ -92,9 +92,19 @@ impl Ability {
     }
 
     /// Removes every action alias, including the defaults.
-    pub fn clear_aliases(&mut self) -> &mut Self {
+    ///
+    /// Mirrors `clear_aliased_actions`.
+    pub fn clear_aliased_actions(&mut self) -> &mut Self {
         self.actions.clear();
         self
+    }
+
+    /// Returns every registered alias target with its mapped actions.
+    ///
+    /// Mirrors `aliased_actions`.
+    #[must_use]
+    pub fn aliased_actions(&self) -> std::collections::HashMap<String, Vec<String>> {
+        self.actions.aliases()
     }
 
     /// Overrides how denial messages are resolved.
@@ -463,6 +473,16 @@ impl Ability {
         let mut sorted: Vec<String> = permitted.into_iter().collect();
         sorted.sort();
         sorted
+    }
+
+    /// Whether any relevant rule carries a raw SQL fragment.
+    ///
+    /// Mirrors `has_raw_sql?`.
+    #[must_use]
+    pub fn has_raw_sql(&self, action: &str, subject_type: &str) -> bool {
+        self.relevant_rules(action, subject_type)
+            .iter()
+            .any(|rule| rule.has_raw_sql())
     }
 
     /// Whether any relevant rule carries a block matcher.

@@ -72,6 +72,12 @@ impl Actions {
     pub fn clear(&mut self) {
         self.aliases.clear();
     }
+
+    /// Returns every alias target with its mapped actions.
+    #[must_use]
+    pub fn aliases(&self) -> HashMap<String, Vec<String>> {
+        self.aliases.clone()
+    }
 }
 
 impl Default for Actions {

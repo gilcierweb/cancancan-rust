@@ -296,6 +296,29 @@ fn rules_for_query_rejects_block_rules() {
 }
 
 #[test]
+fn aliases_report_and_clear() {
+    let mut ability = Ability::new();
+    assert!(ability.aliased_actions().contains_key("read"));
+    ability.clear_aliased_actions();
+    assert!(ability.aliased_actions().is_empty());
+    assert!(!ability.can_check_type("show", "Post"));
+}
+
+#[test]
+fn raw_sql_is_reported() {
+    let mut ability = Ability::new();
+    assert!(!ability.has_raw_sql("read", "Post"));
+    ability
+        .can_where(
+            Some("read"),
+            Some("Post"),
+            Condition::RawSql("published".to_owned()),
+        )
+        .unwrap();
+    assert!(ability.has_raw_sql("read", "Post"));
+}
+
+#[test]
 fn rules_for_query_skips_cannot_with_attributes() {
     let mut ability = Ability::new();
     ability
