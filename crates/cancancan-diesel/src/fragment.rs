@@ -1,4 +1,6 @@
-use cancancan_core::{Ability, CanCanError, Condition, DbValue};
+use cancancan_core::{
+    Ability, CanCanError, Condition, DbValue, compress, rules_compressor_enabled,
+};
 
 /// Renders a [`Condition`] tree as a SQL `WHERE` fragment.
 ///
@@ -37,9 +39,15 @@ pub fn accessible_by_sql(
     subject_type: &str,
     table: &str,
 ) -> Result<String, CanCanError> {
+    let rules = ability.rules_for_query(action, subject_type)?;
+    let rules = if rules_compressor_enabled() {
+        compress(rules)
+    } else {
+        rules
+    };
     let mut allowed: Vec<String> = Vec::new();
     let mut denied: Vec<String> = Vec::new();
-    for rule in ability.rules_for_query(action, subject_type)? {
+    for rule in &rules {
         let fragment = render_condition(rule.condition(), table)?;
         if rule.allows() {
             allowed.push(fragment);
@@ -114,6 +122,7 @@ fn render_condition(condition: &Condition, table: &str) -> Result<String, CanCan
             }
             render_condition(condition, relation)
         }
+        Condition::RawSql(sql) => Ok(format!("({sql})")),
         _ => Err(CanCanError::AttributeArgument),
     }
 }

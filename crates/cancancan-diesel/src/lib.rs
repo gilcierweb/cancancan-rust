@@ -1,14 +1,32 @@
 //! Query filtering for Diesel, mirroring `accessible_by` from the Ruby gem.
 //!
-//! [`accessible_by_sql`] renders an [`Ability`](cancancan_core::Ability) as a
-//! SQL `WHERE` fragment with inlined literals, applied through
-//! `diesel::dsl::sql`. Values are escaped, identifiers validated and quoted,
-//! so the fragment runs on PostgreSQL, MySQL and SQLite.
+//! Two flavors, same rules:
+//!
+//! * Typed predicates (`sqlite::accessible_by`, `postgres::accessible_by`):
+//!   boxed Diesel expressions with bind parameters, composable with any
+//!   query builder call. Needs one [`ColumnMap`] per subject table and the
+//!   matching backend feature.
+//! * [`accessible_by_sql`]: a SQL `WHERE` fragment with inlined literals,
+//!   backend-agnostic, also covering joined associations and raw SQL
+//!   inspection. Prefer it for logging and for cases the typed path rejects.
+//!
+//! Gem to Rust mapping:
+//!
+//! | Ruby gem                      | This crate                                |
+//! |-------------------------------|-------------------------------------------|
+//! | `Post.accessible_by(ability)` | `posts::table.filter(accessible_by(..)?)` |
+//! | hash conditions               | [`cancancan_core::Condition`]             |
+//! | block `can` in `accessible_by` | [`CanCanError::BlockInQuery`]           |
+//! | `cannot` with attributes      | rejected, like `relevant_rules_for_query` |
+//!
+//! Not ported yet: join strategies (`left_join`/`subquery`/`exists` from the
+//! gem adapters) for nested association conditions. `Nested` renders through
+//! [`accessible_by_sql`] (caller joins first) and errors in the typed path.
 //!
 //! # Example
 //!
 //! ```rust,no_run
-//! use cancancan_core::{Ability, Condition, DbValue};
+//! use cancancan_core::Ability;
 //! use cancancan_diesel::accessible_by_sql;
 //! use diesel::dsl::sql;
 //! use diesel::prelude::*;
@@ -29,6 +47,13 @@
 //! ```
 
 mod fragment;
+mod typed;
+
+#[cfg(feature = "postgres")]
+pub mod postgres;
+#[cfg(feature = "sqlite")]
+pub mod sqlite;
 
 pub use cancancan_core::{Ability, CanCanError, Condition, DbValue};
 pub use fragment::{accessible_by_sql, condition_sql};
+pub use typed::{ColumnMap, ColumnType};
