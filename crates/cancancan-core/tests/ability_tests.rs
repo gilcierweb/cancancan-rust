@@ -67,7 +67,7 @@ fn manage_matches_every_action_and_all_matches_every_subject() {
     ability.allow(Some("manage"), Some("all")).unwrap();
 
     assert!(ability.can("destroy", &Post::owned(1, 9)));
-    assert!(ability.can("anything", "Anything"));
+    assert!(ability.can_type("anything", "Anything"));
 }
 
 #[test]
@@ -80,7 +80,7 @@ fn default_aliases_expand_read_create_and_update() {
     let post = Post::owned(1, 1);
     assert!(ability.can("index", &post));
     assert!(ability.can("show", &post));
-    assert!(ability.can("new", "Post"));
+    assert!(ability.can_type("new", "Post"));
     assert!(ability.can("edit", &post));
     assert!(!ability.can("destroy", &post));
 }
@@ -91,8 +91,8 @@ fn custom_alias_applies_to_checks() {
     ability.alias_action(["show"], "preview");
     ability.allow(Some("preview"), Some("Post")).unwrap();
 
-    assert!(ability.can("show", "Post"));
-    assert!(ability.can("preview", "Post"));
+    assert!(ability.can_type("show", "Post"));
+    assert!(ability.can_type("preview", "Post"));
 }
 
 #[test]
@@ -108,7 +108,7 @@ fn class_level_check_returns_rule_behavior() {
             },
         )
         .unwrap();
-    assert!(ability.can("read", "Post"));
+    assert!(ability.can_type("read", "Post"));
 
     let mut denied = Ability::new();
     denied
@@ -121,7 +121,7 @@ fn class_level_check_returns_rule_behavior() {
             },
         )
         .unwrap();
-    assert!(!denied.can("read", "Post"));
+    assert!(!denied.can_type("read", "Post"));
 }
 
 #[test]
@@ -131,9 +131,7 @@ fn block_matcher_decides_at_check_time() {
         .allow_matching(
             Some("read"),
             Some("Post"),
-            Rc::new(|instance| {
-                instance.attribute("published") == Some(DbValue::Bool(true))
-            }),
+            Rc::new(|instance| instance.attribute("published") == Some(DbValue::Bool(true))),
         )
         .unwrap();
 
@@ -147,7 +145,7 @@ fn block_matcher_decides_at_check_time() {
     };
     assert!(ability.can("read", &released));
     assert!(!ability.can("read", &draft));
-    assert!(ability.can("read", "Post"));
+    assert!(ability.can_type("read", "Post"));
 }
 
 #[test]
@@ -235,11 +233,7 @@ fn permitted_attributes_add_on_allow_and_remove_on_deny() {
         )
         .unwrap();
     ability
-        .deny_attributes(
-            Some("update"),
-            Some("Post"),
-            vec!["published".to_owned()],
-        )
+        .deny_attributes(Some("update"), Some("Post"), vec!["published".to_owned()])
         .unwrap();
 
     assert_eq!(
@@ -292,11 +286,7 @@ fn nested_condition_matches_through_association() {
 fn rules_for_query_rejects_block_rules() {
     let mut ability = Ability::new();
     ability
-        .allow_matching(
-            Some("read"),
-            Some("Post"),
-            Rc::new(|_| true),
-        )
+        .allow_matching(Some("read"), Some("Post"), Rc::new(|_| true))
         .unwrap();
     assert_eq!(
         ability.rules_for_query("read", "Post").unwrap_err(),
@@ -317,11 +307,7 @@ fn rules_for_query_returns_declarative_rules() {
 fn permissions_report_splits_allow_and_deny() {
     let mut ability = Ability::new();
     ability
-        .allow_attributes(
-            Some("update"),
-            Some("Post"),
-            vec!["title".to_owned()],
-        )
+        .allow_attributes(Some("update"), Some("Post"), vec!["title".to_owned()])
         .unwrap();
     ability.deny(Some("destroy"), Some("Post")).unwrap();
 
@@ -341,7 +327,7 @@ fn map_subject_covers_dynamic_fields() {
     let mut fields = HashMap::new();
     fields.insert("role".to_owned(), DbValue::from("admin"));
     let subject = MapSubject {
-        type_name: "Dashboard".to_owned(),
+        type_name: "Dashboard",
         fields,
     };
 

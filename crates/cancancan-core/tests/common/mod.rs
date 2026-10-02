@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use cancancan_core::{DbValue, SubjectInstance};
 use std::collections::HashMap;
 
@@ -7,7 +9,7 @@ pub struct User {
 }
 
 impl SubjectInstance for User {
-    fn subject_type(&self) -> &str {
+    fn subject_type(&self) -> &'static str {
         "User"
     }
 
@@ -41,7 +43,7 @@ impl Post {
 }
 
 impl SubjectInstance for Post {
-    fn subject_type(&self) -> &str {
+    fn subject_type(&self) -> &'static str {
         "Post"
     }
 
@@ -57,20 +59,23 @@ impl SubjectInstance for Post {
 
     fn association(&self, name: &str) -> Option<&dyn SubjectInstance> {
         match name {
-            "author" => self.author.as_ref().map(|user| user as &dyn SubjectInstance),
+            "author" => self
+                .author
+                .as_ref()
+                .map(|user| user as &dyn SubjectInstance),
             _ => None,
         }
     }
 }
 
 pub struct MapSubject {
-    pub type_name: String,
+    pub type_name: &'static str,
     pub fields: HashMap<String, DbValue>,
 }
 
 impl SubjectInstance for MapSubject {
-    fn subject_type(&self) -> &str {
-        &self.type_name
+    fn subject_type(&self) -> &'static str {
+        self.type_name
     }
 
     fn attribute(&self, name: &str) -> Option<DbValue> {

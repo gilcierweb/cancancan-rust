@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 fn subject_with(fields: &[(&str, DbValue)]) -> MapSubject {
     MapSubject {
-        type_name: "Post".to_owned(),
+        type_name: "Post",
         fields: fields
             .iter()
             .map(|(name, value)| ((*name).to_owned(), value.clone()))
