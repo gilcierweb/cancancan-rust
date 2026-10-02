@@ -1,0 +1,16 @@
+[package]
+name = "cancancan-diesel"
+version.workspace = true
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+
+[dependencies]
+cancancan-core = { path = "../cancancan-core" }
+diesel = { workspace = true }
+
+[dev-dependencies]
+rstest.workspace = true
+
+[lints]
+workspace = true
