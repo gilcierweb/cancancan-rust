@@ -12,7 +12,7 @@ for roles + CanCanCan for authorization) with their Rust equivalents:
 The three libraries are complementary, not overlapping by design:
 
 - Authentication answers *who* is calling.
-- `rolify-rust` answers what role(s) they hold.
+- `rolify-rust` answers what role(s) they call.
 - `cancancan-rust` decides what that role may do, per request, per record.
 
 ## Pattern 1 — Axum + axum-login (recommended for new projects)
@@ -106,8 +106,8 @@ handler. A common recipe:
 
 1. Fetch the current user (from `axum-login` session / actix session).
 2. Query their roles with `rolify-*` (one query via your chosen adapter).
-3. Materialize the ability in `ability.can_where(...)` rules, so mid-plane
-   queries never need to hit the roles table again.
+3. Materialize the ability into `Ability` rules via `.can_where(...)`, so the
+   route layer does not need to hit the roles table again.
 
 When checking *inside* a handler, use the extractor's `ability()` reference.
 For Rails-like authorization on a controller method, call one of:
@@ -127,7 +127,7 @@ For Rails-like authorization on a controller method, call one of:
 | Missing record via loader | 404 (from web extractor) |
 | Loader failure | 500 |
 
-## Notes / current deferred area
+## Notes / deferred areas
 
 - `load_and_authorize_resource` (`skip_` variants included) is currently a
   *function* accessed on the extractor. Rails-style *directives* declared on
