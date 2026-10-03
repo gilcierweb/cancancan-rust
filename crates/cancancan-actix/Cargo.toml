@@ -1,0 +1,16 @@
+[package]
+name = "cancancan-actix"
+version.workspace = true
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+
+[dependencies]
+cancancan-core = { path = "../cancancan-core" }
+actix-web = { version = "4", default-features = false }
+
+[dev-dependencies]
+actix-web = { version = "4", features = ["macros"] }
+
+[lints]
+workspace = true
