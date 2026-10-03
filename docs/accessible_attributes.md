@@ -1,42 +1,99 @@
-# Accessible attributes (strong params)
+# Accessible attributes
 
-Every rule definition optionally exposes an attribute whitelist — it amplifies
-what its `permissions` field is: read/write-only column lists to form-preprocessors and
-controller input filters.
+`cancancan-core` lets you define permissions on individual attributes of an
+instance — the port of the gem's attribute-level rules (traditionally used to
+feed Rails Strong Parameters).
 
-## `can_attributes` / `cannot_attributes`
-
-These define the covers on a rule — the gem supports an optional `attributes`
-parameter.before the condition expression:
+Given users may only read a user's first and last name:
 
 ```ruby
-can :update, Share, :expiry_date
+# gem
+can :read, User, [:first_name, :last_name]
 ```
 
-Rust:
-
 ```rust
+// port
 let mut ability = Ability::new();
-ability.cannot_attributes(
-    Some("update"),
-    Some("Share"),
-    vec!["name".to_owned()],
+ability.can_attributes(
+    Some("read"),
+    Some("User"),
+    vec!["first_name".into(), "last_name".into()],
+    None, // no extra condition
 )?;
 ```
 
-在g properties. That dispatch them in exactly the gem-behavior:
-* when the check is on a loaded record (attributes needed are usually the attributes you can modify)
-* ```access queries``` queries don count attributes
+(`can_attributes` also has a `can_attributes_where` form when you need both
+attributes and a condition — see the API docs.)
 
-These convertibility paths produces: attribute-based filtering for {@attribute} queries.
+## Checking a single attribute
 
-In querying this Array(`attributes`) to identify a condition are
-defined With in Ruby.
+```ruby
+# gem
+can? :read, @user, :first_name
+```
 
-And this platinum caller matches query-for attributes‘re filtered when using [create — we should notbet therequests /authorize!] assets“. Because you alliance comes, give them ls you over/enclosure
+```rust
+// port
+ability.can_check_attribute("read", &user, "first_name"); // => true
+ability.can_check_attribute("read", &user, "password");   // => false
+```
 
-## rails sanitizer integration
+The mirror-image `cannot_attributes` / `cannot_check_attribute` deny specific
+columns while leaving the rest allowed — attribute-level rules follow the same
+"last matching rule wins" semantics as everything else.
 
-нев um attrs thatging controllers and the request layer thatcall `permitted_attributes(action, subject)` for input validation}}
+## Listing permitted attributes
 
-## Defaults: divide passionate down what rules that neverv denials vulture actions on \Permissions themselves{(override)} become own mass measures ti generules of further steps.
+Ask for the full allowed list for an action on a subject type:
+
+```ruby
+# gem
+current_ability.permitted_attributes(:read, @user)
+#=> [:first_name, :last_name]
+```
+
+```rust
+// port
+let attrs = ability.permitted_attributes("read", "User");
+// => ["first_name", "last_name"]
+```
+
+Typical uses:
+
+- **Form builders** — render one input per permitted attribute.
+- **Request validation** — intersect the inbound parameter keys with
+  `permitted_attributes(action, subject_type)` before passing them to your
+  model layer. In axum/actix this lives naturally in an extractor or in the
+  handler before deserialization is committed (see
+  [web integration](./web-integration.md)).
+
+```rust
+let allowed = ability.permitted_attributes("update", "Book");
+let sanitized: serde_json::Map<_, _> = params
+    .into_iter()
+    .filter(|(k, _)| allowed.iter().any(|a| a == k))
+    .collect();
+```
+
+## Filling forms: `attributes_for`
+
+The gem's `attributes_for(action, subject)` returns the *values* a new record
+should start with, derived from rule conditions. The port keeps it:
+
+```rust
+ability.can_where(
+    Some("create"),
+    Some("Project"),
+    Condition::Eq { field: "active".into(), value: DbValue::Bool(true) },
+)?;
+
+let initial = ability.attributes_for("create", "Project");
+// => { "active": Bool(true) } — prefill a form with these
+```
+
+Only simple equality conditions contribute values; ranges, lists, nested and
+raw-SQL conditions are skipped (same as the gem).
+
+> Attribute rules do **not** restrict queries: `accessible_by`-style adapter
+> methods ignore the attribute list, exactly like the gem. Use
+> `permitted_attributes` at the input layer instead.
