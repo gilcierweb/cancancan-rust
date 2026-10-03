@@ -1,0 +1,18 @@
+[package]
+name = "cancancan-axum"
+version.workspace = true
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+
+[dependencies]
+cancancan-core = { path = "../cancancan-core" }
+axum = { version = "0.8", default-features = false }
+
+[dev-dependencies]
+axum = { version = "0.8", features = ["http1"] }
+tower = { version = "0.5", features = ["util"] }
+tokio = { version = "1", features = ["rt", "macros"] }
+
+[lints]
+workspace = true
