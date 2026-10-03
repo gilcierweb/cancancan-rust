@@ -22,8 +22,19 @@ ability.can_attributes(
 )?;
 ```
 
-(`can_attributes` also has a `can_attributes_where` form when you need both
-attributes and a condition - see the API docs.)
+Attribute lists and conditions combine freely: the gem's `can :update, Book,
+[:title], published: true` maps to `can_attributes_where`:
+
+```rust
+use cancancan_core::Condition;
+
+ability.can_attributes_where(
+    Some("update"),
+    Some("Book"),
+    vec!["title".into()],
+    Condition::Eq { field: "published".into(), value: DbValue::Bool(true) },
+)?;
+```
 
 ## Checking a single attribute
 

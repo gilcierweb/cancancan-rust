@@ -25,8 +25,8 @@ fn user_can_only_destroy_own_projects() {
 ```
 
 (The helper shapes - `user(...)`, `project(...)` - are whatever factory
-functions your codebase already has; `RecordSubject` or your
-`SubjectInstance` impls work directly.)
+functions your codebase already has; `MapSubject` or your `SubjectInstance`
+impls work directly.)
 
 A table-driven style scales well when roles multiply:
 

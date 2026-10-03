@@ -44,7 +44,7 @@ mod validation;
 pub use ability::{Ability, AbilityPermissions, MessageResolver, SubjectRef};
 pub use actions::Actions;
 pub use compressor::compress;
-pub use condition::{Condition, DbValue, SubjectInstance};
+pub use condition::{Condition, DbValue, MapSubject, SubjectInstance};
 pub use config::{rules_compressor_enabled, set_rules_compressor_enabled};
 pub use error::CanCanError;
 pub use messages::default_message;

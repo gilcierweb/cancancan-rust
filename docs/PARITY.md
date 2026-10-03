@@ -17,6 +17,7 @@ marked as:
 | `can?(action, subject, attribute)` | `Ability::can_check_attribute` | ✅ |
 | `cannot?` | `Ability::cannot_check` + `_type` | ✅ |
 | `can action, subject` (rule definition) | `Ability::can`, `can_where`, `can_matching`, `can_attributes` | ✅ |
+| `can action, subject, attributes, conditions` (combined) | `Ability::can_attributes_where`, `cannot_attributes_where` | ✅ |
 | `cannot` (rule definition) | `Ability::cannot`, `cannot_where`, `cannot_matching`, `cannot_attributes` | ✅ |
 | `authorize!` | `Ability::authorize`, `authorize_type`, `authorize_subject` | ✅ |
 | `authorize!(..., message:)` | `Ability::authorize_message` | ✅ |
@@ -65,8 +66,14 @@ marked as:
 
 ## Known divergences (documented in code)
 
-1. Class-level checks (`can_check_type`) do **not** evaluate conditions/matchers - identical to the gem (`can?` on a Class ignores conditions).
+1. Class-level checks (`can_check_type`) ignore conditions and matchers: a
+   catch-all `cannot` still denies (last-match-wins), a conditional/matcher
+   rule matches by its base behavior - mirroring the gem's
+   `matches_non_block_conditions`/`matches_block_conditions` class branch.
 2. Adapter `Nested` conditions are **rejected with `WrongAssociation`** in Diesel/SeaORM/SQLx adapters (join inference not implemented); MongoDB supports them natively via dot-notation.
 3. **UUID**: SQLx binds UUID as validated text; Diesel typed path binds natively on Postgres (`sql_types::Uuid`) and validated text on SQLite; SeaORM binds native `sea-query::Value::Uuid`; Mongo binds native BSON Binary (subtype 4). Integers are always bound (i16/i32/i64) with overflow checks.
 4. **Null semantics in MongoDB are strict**: `IS NULL` → `$type: "null"` (present null only), unlike the loose `{ field: null }` that would also match missing fields.
 5. `CannotAttributes` rules are **rejected** by adapters' `rules_for_query` - same as the gem's `relevant_rules_for_query`.
+6. Raw-SQL conditions are skipped (not raised) by in-memory `can_check` - the gem raises; a boolean API cannot raise, so the rule is treated as non-matching (`has_raw_sql` exposes this).
+7. `unauthorized_message` resolves through a closure with the gem's key chain (`action`/`aliases`/`manage` × `subject`/`all`); no i18n backend is bundled.
+

@@ -78,15 +78,15 @@ one convention and stick to it.
 ## Map-backed subjects for dynamic data
 
 For data that is not a typed struct (deserialized JSON, admin-defined
-records), `RecordSubject` wraps a map of attributes:
+records), `MapSubject` wraps a map of attributes:
 
 ```rust
-use cancancan_core::RecordSubject;
+use cancancan_core::{DbValue, MapSubject};
 
-let doc = RecordSubject::new("Document", [
+let doc = MapSubject::new("Document", [
     ("confidential".to_owned(), DbValue::Bool(false)),
     ("owner_id".to_owned(), DbValue::Int(7)),
-]);
+].into_iter().collect());
 ability.can_check("read", &doc);
 ```
 

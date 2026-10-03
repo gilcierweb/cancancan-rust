@@ -285,6 +285,53 @@ impl Ability {
         Ok(self)
     }
 
+    /// Declares a `can` rule with both a condition and an attribute list,
+    /// mirroring the gem `can :update, Post, [:title], published: true`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CanCanError::ActionWithoutSubject`] when `action` is `Some`
+    /// while `subject_type` is `None`.
+    pub fn can_attributes_where(
+        &mut self,
+        action: Option<&str>,
+        subject_type: Option<&str>,
+        attributes: Vec<String>,
+        condition: Condition,
+    ) -> Result<&mut Self, CanCanError> {
+        let rule = Rule::can_where(
+            action.map(str::to_owned),
+            subject_type.map(str::to_owned),
+            condition,
+        )?
+        .with_attributes(attributes);
+        self.rules.push(rule);
+        Ok(self)
+    }
+
+    /// Deny counterpart of [`Ability::can_attributes_where`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CanCanError::ActionWithoutSubject`] when `action` is `Some`
+    /// while `subject_type` is `None`.
+    pub fn cannot_attributes_where(
+        &mut self,
+        action: Option<&str>,
+        subject_type: Option<&str>,
+        attributes: Vec<String>,
+        condition: Condition,
+    ) -> Result<&mut Self, CanCanError> {
+        let rule = Rule::cannot_where(
+            action.map(str::to_owned),
+            subject_type.map(str::to_owned),
+            condition,
+        )?
+        .with_attributes(attributes);
+        self.rules.push(rule);
+        Ok(self)
+    }
+
     /// Checks whether `action` is permitted on `instance`.
     ///
     /// This is the `can?` equivalent. Concrete references coerce
@@ -441,47 +488,37 @@ impl Ability {
     /// Merges every rule and alias from `other` into this ability.
     pub fn merge(&mut self, other: &Ability) -> &mut Self {
         self.rules.extend(other.rules.iter().cloned());
-        for target in other.action_targets() {
-            let mapped = other.actions.expand(&target);
-            let extra: Vec<String> = mapped
-                .into_iter()
-                .filter(|action| action != &target)
-                .collect();
-            if !extra.is_empty() {
-                self.actions.alias_action(extra, target);
-            }
+        for (target, mapped) in other.aliased_actions() {
+            self.actions.alias_action(mapped, target);
         }
         self
     }
 
     /// Reports which actions on which subjects carry attribute lists.
+    ///
+    /// Mirrors the gem `permissions`: attribute lists accumulate across every
+    /// matching rule (definition order), keyed by the rule's explicit actions
+    /// and subjects only.
     #[must_use]
     pub fn permissions(&self) -> AbilityPermissions {
         let mut allowed: HashMap<String, HashMap<String, Vec<String>>> = HashMap::new();
         let mut denied: HashMap<String, HashMap<String, Vec<String>>> = HashMap::new();
-        for rule in self.rules.iter().rev() {
+        for rule in &self.rules {
             let bucket = if rule.allows() {
                 &mut allowed
             } else {
                 &mut denied
             };
-            let actions = if rule.actions().is_empty() {
-                vec!["all".to_owned()]
-            } else {
-                rule.actions().to_vec()
-            };
-            let subjects = if rule.subjects().is_empty() {
-                vec!["all".to_owned()]
-            } else {
-                rule.subjects().to_vec()
-            };
-            for action in actions {
-                for subject in &subjects {
-                    bucket
-                        .entry(action.clone())
-                        .or_default()
-                        .entry(subject.clone())
-                        .or_insert_with(|| rule.attributes().to_vec());
+            for action in rule.actions() {
+                for expanded in self.actions.expand(action) {
+                    for subject in rule.subjects() {
+                        bucket
+                            .entry(expanded.clone())
+                            .or_default()
+                            .entry(subject.clone())
+                            .or_default()
+                            .extend(rule.attributes().iter().cloned());
+                    }
                 }
             }
         }
@@ -490,7 +527,9 @@ impl Ability {
 
     /// Merges scalar condition values for building new instances.
     ///
-    /// Mirrors `attributes_for`: only plain equalities are collected.
+    /// Mirrors `attributes_for`: the values come from every relevant `can`
+    /// rule's conditions (without evaluating them against the subject), and
+    /// earlier rules win on conflicting keys.
     #[must_use]
     pub fn attributes_for(
         &self,
@@ -499,7 +538,7 @@ impl Ability {
     ) -> HashMap<String, DbValue> {
         let mut attributes = HashMap::new();
         for rule in self.relevant_rules(action, subject.subject_type()) {
-            if rule.allows() && rule.matches_instance(subject) {
+            if rule.allows() {
                 attributes.extend(rule.condition().scalar_attributes());
             }
         }
@@ -515,6 +554,11 @@ impl Ability {
         let mut permitted: HashSet<String> = HashSet::new();
         for rule in self.relevant_rules(action, subject_type).into_iter().rev() {
             if rule.attributes().is_empty() {
+                continue;
+            }
+            // mirrors class-level `matches_conditions?`: a deny rule carrying
+            // conditions or a matcher does not apply to a type check
+            if !rule.allows() && !rule.is_catch_all() {
                 continue;
             }
             if rule.allows() {
@@ -577,12 +621,21 @@ impl Ability {
     }
 
     /// Resolves the denial message for `action` on `subject_type`.
+    ///
+    /// Mirrors the gem's `unauthorized_message` key chain: for each subject in
+    /// `[subject, all]`, the resolver is tried with the action, each of its
+    /// aliases, and `manage`.
     #[must_use]
     pub fn unauthorized_message(&self, action: &str, subject_type: &str) -> String {
         if let Some(resolver) = &self.message_resolver {
-            for candidate_action in self.actions.expand(action) {
-                if let Some(message) = resolver(&candidate_action, subject_type) {
-                    return message;
+            let mut candidates: Vec<String> = vec![action.to_owned()];
+            candidates.extend(self.actions.aliases_for(action));
+            candidates.push("manage".to_owned());
+            for subject in [subject_type, "all"] {
+                for candidate in &candidates {
+                    if let Some(message) = resolver(candidate, subject) {
+                        return message;
+                    }
                 }
             }
         }
@@ -602,11 +655,15 @@ impl Ability {
         };
         for rule in &self.relevant_rules(action, subject_type) {
             debug_assert!(rule.is_relevant(&self.actions, action, subject_type));
-            let instance_matches = match instance {
+            let matches = match instance {
                 Some(found) => rule.matches_instance(found),
-                None => rule.allows(),
+                // Class-level check mirrors the gem: a rule without conditions
+                // or matcher always matches; a conditional/callback rule
+                // matches by its base behavior (`can` matches and grants,
+                // `cannot` does not match, so an earlier `can` still stands).
+                None => rule.is_catch_all() || rule.allows(),
             };
-            if instance_matches && rule.matches_attribute(attribute) {
+            if matches && rule.matches_attribute(attribute) {
                 return rule.allows();
             }
         }
@@ -619,18 +676,6 @@ impl Ability {
             .filter(|rule| rule.is_relevant(&self.actions, action, subject_type))
             .rev()
             .collect()
-    }
-
-    fn action_targets(&self) -> Vec<String> {
-        let mut targets: Vec<String> = Vec::new();
-        for rule in &self.rules {
-            for action in rule.actions() {
-                if !targets.contains(action) {
-                    targets.push(action.clone());
-                }
-            }
-        }
-        targets
     }
 }
 

@@ -96,6 +96,134 @@ fn custom_alias_applies_to_checks() {
 }
 
 #[test]
+fn catch_all_cannot_blocks_class_level_check() {
+    // gem: cannot matches class-level checks when it carries no conditions
+    let mut ability = Ability::new();
+    ability.can(Some("read"), Some("all")).unwrap();
+    ability.cannot(Some("read"), Some("Post")).unwrap();
+    assert!(!ability.can_check_type("read", "Post"));
+    assert!(ability.authorize_type("read", "Post").is_err());
+    // but instances with guarded can rules still work
+    let mut mixed = Ability::new();
+    mixed.can(Some("manage"), Some("Post")).unwrap();
+    mixed.cannot(Some("destroy"), Some("Post")).unwrap();
+    assert!(!mixed.can_check_type("destroy", "Post"));
+    assert!(mixed.can_check_type("update", "Post"));
+}
+
+#[test]
+fn attributes_for_merges_without_evaluating_conditions() {
+    let mut ability = Ability::new();
+    ability
+        .can_where(
+            Some("create"),
+            Some("Post"),
+            Condition::Eq {
+                field: "published".to_owned(),
+                value: DbValue::Bool(true),
+            },
+        )
+        .unwrap();
+    let post = Post {
+        user_id: 0,
+        published: false,
+        id: 0,
+        title: String::new(),
+        author: None,
+    };
+    // gem merges attributes even for rules whose conditions fail on the
+    // instance - the failing can rule above still contributes `published`
+    let attributes = ability.attributes_for("create", &post);
+    assert_eq!(attributes.get("published"), Some(&DbValue::Bool(true)));
+}
+
+#[test]
+fn range_with_incomparable_bounds_does_not_match() {
+    let post = Post {
+        user_id: 5,
+        published: true,
+        id: 0,
+        title: String::new(),
+        author: None,
+    };
+    let mut ability = Ability::new();
+    // string range against an int field must fail closed, not match
+    ability
+        .can_where(
+            Some("read"),
+            Some("Post"),
+            Condition::Range {
+                field: "user_id".to_owned(),
+                min: DbValue::Str("a".to_owned()),
+                max: DbValue::Str("z".to_owned()),
+            },
+        )
+        .unwrap();
+    assert!(!ability.can_check("read", &post));
+}
+
+#[test]
+fn unauthorized_message_walks_alias_chain() {
+    let mut ability = Ability::new();
+    let resolver: cancancan_core::MessageResolver = std::sync::Arc::new(|action, subject| {
+        if action == "manage" && subject == "all" {
+            return Some("generic denial".to_owned());
+        }
+        if action == "read" && subject == "Post" {
+            return Some("cannot read posts".to_owned());
+        }
+        None
+    });
+    ability.set_message_resolver(resolver);
+    // alias: read -> show; exact key wins for the alias target
+    assert_eq!(
+        ability.unauthorized_message("show", "Post"),
+        "cannot read posts"
+    );
+    // fallback to manage.all
+    assert_eq!(
+        ability.unauthorized_message("frob", "Post"),
+        "generic denial"
+    );
+}
+
+#[test]
+fn merge_copies_aliases_unused_by_rules() {
+    let mut other = Ability::new();
+    other.alias_action(["modify"], "publish").unwrap();
+    // alias registered but no rule references it - merge must still copy it
+    let mut ability = Ability::new();
+    ability.merge(&other);
+    ability.can(Some("publish"), Some("Post")).unwrap();
+    let post = Post {
+        user_id: 0,
+        published: true,
+        id: 0,
+        title: String::new(),
+        author: None,
+    };
+    assert!(ability.can_check("modify", &post));
+}
+
+#[test]
+fn permissions_accumulates_attribute_lists() {
+    let mut ability = Ability::new();
+    ability
+        .can_attributes(Some("update"), Some("Post"), vec!["title".to_owned()])
+        .unwrap();
+    ability
+        .can_attributes(Some("update"), Some("Post"), vec!["body".to_owned()])
+        .unwrap();
+    let permissions = ability.permissions();
+    let allowed = permissions
+        .allowed
+        .get("update")
+        .and_then(|by_subject| by_subject.get("Post"))
+        .expect("update/Post permissions");
+    assert_eq!(allowed, &vec!["title".to_owned(), "body".to_owned()]);
+}
+
+#[test]
 fn class_level_check_returns_rule_behavior() {
     let mut ability = Ability::new();
     ability
@@ -428,4 +556,41 @@ fn map_subject_covers_dynamic_fields() {
         )
         .unwrap();
     assert!(ability.can_check("read", &subject));
+}
+
+#[test]
+fn can_attributes_where_combines_condition_and_attributes() {
+    let mut ability = Ability::new();
+    ability
+        .can_attributes_where(
+            Some("update"),
+            Some("Post"),
+            vec!["title".to_owned()],
+            Condition::Eq {
+                field: "user_id".to_owned(),
+                value: DbValue::Int(7),
+            },
+        )
+        .unwrap();
+    let own = Post {
+        id: 1,
+        user_id: 7,
+        published: false,
+        title: String::new(),
+        author: None,
+    };
+    let foreign = Post {
+        id: 2,
+        user_id: 9,
+        published: false,
+        title: String::new(),
+        author: None,
+    };
+    assert!(ability.can_check_attribute("update", &own, "title"));
+    assert!(!ability.can_check_attribute("update", &own, "published"));
+    assert!(!ability.can_check_attribute("update", &foreign, "title"));
+    assert_eq!(
+        ability.permitted_attributes("update", "Post"),
+        vec!["title".to_owned()]
+    );
 }

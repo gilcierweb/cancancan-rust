@@ -35,8 +35,7 @@ ability.can_check("update", &article); // => true when article.user_id == user.i
 ```
 
 Instances are checked through the `SubjectInstance` trait (implement it for
-your model, or use `RecordSubject`/map-backed subjects - see
-[subjects](./subjects.md)).
+your model - see [subjects](./subjects.md)).
 
 By default there are **no permissions**: nobody can do anything until a rule
 allows it.

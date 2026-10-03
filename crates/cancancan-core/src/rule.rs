@@ -247,10 +247,7 @@ impl Rule {
         }
         let wanted = action.to_owned();
         self.actions.iter().any(|defined| {
-            defined == "manage"
-                || defined == "all"
-                || defined == &wanted
-                || actions.expand(defined).contains(&wanted)
+            defined == "manage" || defined == &wanted || actions.expand(defined).contains(&wanted)
         })
     }
 

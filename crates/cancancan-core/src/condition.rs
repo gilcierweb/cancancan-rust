@@ -68,6 +68,37 @@ pub trait SubjectInstance {
     }
 }
 
+/// Map-backed [`SubjectInstance`] for dynamic or untyped data.
+///
+/// Useful for tests, deserialized payloads (JSON/flat rows) and ad-hoc
+/// subjects where defining a dedicated struct is not worth it.
+#[derive(Debug, Clone)]
+pub struct MapSubject {
+    subject_type: &'static str,
+    fields: HashMap<String, DbValue>,
+}
+
+impl MapSubject {
+    /// Creates a subject of `subject_type` from an attribute map.
+    #[must_use]
+    pub fn new(subject_type: &'static str, fields: HashMap<String, DbValue>) -> Self {
+        Self {
+            subject_type,
+            fields,
+        }
+    }
+}
+
+impl SubjectInstance for MapSubject {
+    fn subject_type(&self) -> &'static str {
+        self.subject_type
+    }
+
+    fn attribute(&self, name: &str) -> Option<DbValue> {
+        self.fields.get(name).cloned()
+    }
+}
+
 /// Declarative condition tree attached to a rule.
 ///
 /// Mirrors the hash conditions of the Ruby gem (`Eq`, `In`, `Range`,
@@ -128,8 +159,9 @@ impl Condition {
             },
             Self::Range { field, min, max } => match instance.attribute(field) {
                 Some(actual) => {
-                    compare_values(&actual, min) != Some(std::cmp::Ordering::Less)
-                        && compare_values(&actual, max) != Some(std::cmp::Ordering::Greater)
+                    // fail closed on incomparable types instead of matching
+                    matches!(compare_values(&actual, min), Some(order) if order != std::cmp::Ordering::Less)
+                        && matches!(compare_values(&actual, max), Some(order) if order != std::cmp::Ordering::Greater)
                 }
                 None => false,
             },
