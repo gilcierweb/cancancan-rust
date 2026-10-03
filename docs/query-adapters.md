@@ -1,9 +1,9 @@
 # Query adapters
 
-When you canڑract an [`Ability`](../crates/cancancan-core/src/ability.rs),
-adapters convert it into the filter expression your database layer considers
-native. The matching source of truth is `rules_for_query` per adapter (any
-`cannot`-with-fields and matcher rules are rejected with these unique errors).
+When you have an [`Ability`](../crates/cancancan-core/src/ability.rs),
+adapters translate it into the filter expression your database layer expects.
+The logic is shared: all adapters normalize rules the same way through `rules_for_query` and raise in the same cases:
+matcher rules and `Nested` conditions are rejected (`BlockInQuery`, `WrongAssociation`), and so are unknown fields (`AttributeArgument`).
 
 ## What all adapters share
 
