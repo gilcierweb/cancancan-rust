@@ -334,6 +334,33 @@ To skip the Docker-backed MongoDB e2e suite:
 cargo test --workspace --exclude cancancan-mongo
 ```
 
+## Roadmap to 1.0
+
+The following areas are intentionally deferred before a 1.0 cut:
+
+- **Rails-style generators** — today `cancancan-cli scaffold` only writes a
+  starter ability module; richer scaffolds (controller templates, rolify
+  pairing, auth middleware) are not ported. If templating becomes
+  sophisticated, [`tera`](https://crates.io/crates/tera) will replace the
+  single include-string template.
+- **STI handling** — the core `Ability` can encode inheritance-style rules via
+  `"manage"`/`"all"` and conditions, but runtime schema introspection
+  (namespace of `table_name`-derived types per adapter) is left to the
+  integrations.
+- **Join/association loading in query adapters** — conditions carrying
+  `Nested` raise `WrongAssociation` on SQL adapters today (no generic JOIN
+  inference); the MongoDB adapter flattens to dot-notation already.
+- **Web UI / dev tooling** — there is no equivalent of Rails generators
+  (`rails g cancan:ability`) beyond the starter scaffold; a full developer-UX
+  surface (dashboards, fixtures, etc.) is not in scope for 1.0.
+
+All current stable flows still honour the same quality gate before release:
+
+```bash
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --all-features
+cargo test --workspace   # Docker required only for the mongodb e2e suite
+```
 ## Contributing
 
 Contributions are welcome! Feel free to open issues and pull requests.
