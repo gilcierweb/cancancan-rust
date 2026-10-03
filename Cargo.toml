@@ -15,6 +15,7 @@ clap = { version = "4", features = ["derive"] }
 diesel = { version = "2.2", default-features = false }
 sea-query = { version = "0.32", default-features = false, features = ["with-uuid", "backend-postgres", "backend-sqlite"] }
 sqlx = { version = "0.8", default-features = false }
+bson = { version = "2", default-features = false }
 rstest = "0.27"
 pretty_assertions = "1.4"
 libsqlite3-sys = { version = "0.28", features = ["bundled"] }

@@ -1,0 +1,14 @@
+[package]
+name = "cancancan-mongo"
+version.workspace = true
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+
+[dependencies]
+cancancan-core = { path = "../cancancan-core" }
+bson = { workspace = true }
+uuid = { version = "1", features = ["v4"] }
+
+[lints]
+workspace = true
