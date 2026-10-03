@@ -384,6 +384,7 @@ Released under the [MIT License](LICENSE).
 
 ### Links
 - Repository: https://github.com/gilcierweb/cancancan-rust
+- Documentation: see [docs/README.md](docs/README.md) and [docs/PARITY.md](docs/PARITY.md)
 
 ### Author
 Built and maintained by [GilcierWeb](https://gilcierweb.com.br).
