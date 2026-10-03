@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::actions::Actions;
 use crate::condition::{Condition, SubjectInstance};
@@ -7,8 +7,9 @@ use crate::error::CanCanError;
 /// Block matcher evaluated against an instance at check time.
 ///
 /// Rules carrying a matcher cannot be translated into database queries,
-/// mirroring the `only_block?` guard of the Ruby gem.
-pub type BlockMatcher = Rc<dyn Fn(&dyn SubjectInstance) -> bool>;
+/// mirroring the `only_block?` guard of the Ruby gem. Uses
+/// [`Arc`] (thread-safe) so abilities can be shared across web workers.
+pub type BlockMatcher = Arc<dyn Fn(&dyn SubjectInstance) -> bool + Send + Sync>;
 
 /// Single `allow`/`deny` declaration, mirroring `CanCan::Rule`.
 ///

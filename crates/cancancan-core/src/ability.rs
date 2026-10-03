@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::Condition;
 use crate::actions::Actions;
@@ -30,7 +30,7 @@ impl std::fmt::Debug for SubjectRef<'_> {
 }
 
 /// Custom resolver for denial messages, mirroring the i18n lookup.
-pub type MessageResolver = Rc<dyn Fn(&str, &str) -> Option<String>>;
+pub type MessageResolver = Arc<dyn Fn(&str, &str) -> Option<String> + Send + Sync>;
 
 /// Defines and checks authorization rules.
 ///

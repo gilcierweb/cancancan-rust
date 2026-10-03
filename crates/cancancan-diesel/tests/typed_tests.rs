@@ -5,7 +5,7 @@ use cancancan_diesel::sqlite::accessible_by;
 use cancancan_diesel::{ColumnMap, ColumnType};
 use diesel::prelude::*;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 
 diesel::table! {
     posts (id) {
@@ -231,7 +231,7 @@ fn nested_condition_is_rejected() {
 fn matcher_rule_is_rejected() {
     let mut ability = Ability::new();
     ability
-        .can_matching(Some("read"), Some("Post"), Rc::new(|_| true))
+        .can_matching(Some("read"), Some("Post"), Arc::new(|_| true))
         .unwrap();
     assert_eq!(
         accessible_by::<posts::table>(&ability, "read", "Post", "posts", &columns()).err(),

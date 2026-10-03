@@ -2,7 +2,7 @@ mod common;
 
 use cancancan_core::{Actions, CanCanError, Condition, DbValue, Rule};
 use common::Post;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[test]
 fn can_rule_reports_its_parts() {
@@ -68,7 +68,7 @@ fn block_matcher_rules_match_through_matcher() {
     let rule = Rule::can_matching(
         Some("read".to_owned()),
         Some("Post".to_owned()),
-        Rc::new(|_| true),
+        Arc::new(|_| true),
     )
     .unwrap();
     assert!(rule.has_matcher());

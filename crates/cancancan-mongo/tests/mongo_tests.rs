@@ -2,7 +2,7 @@ use bson::{Document, doc, oid::ObjectId};
 use cancancan_core::{Ability, CanCanError, Condition, DbValue};
 use cancancan_mongo::{ColumnMap, ColumnType, accessible_by, condition_to_doc};
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 
 const USER_OID: &str = "5c9a3a314c8f4f3a8f9d1a2b";
 const USER_UUID: &str = "5c9a3a31-4c8f-4f3a-8f9d-1a2b3c4d5e6f";
@@ -266,7 +266,7 @@ fn accessible_by_catch_all_matches_everything() {
 fn accessible_by_matcher_rule_rejected() {
     let mut ability = Ability::new();
     ability
-        .can_matching(Some("read"), Some("Post"), Rc::new(|_| true))
+        .can_matching(Some("read"), Some("Post"), Arc::new(|_| true))
         .unwrap();
     assert_eq!(
         accessible_by(&ability, "read", "Post", &columns()).unwrap_err(),

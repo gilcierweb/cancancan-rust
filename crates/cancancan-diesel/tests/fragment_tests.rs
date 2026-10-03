@@ -122,10 +122,10 @@ fn accessible_by_with_catch_all_matches_everything() {
 
 #[test]
 fn accessible_by_rejects_matcher_rules() {
-    use std::rc::Rc;
+    use std::sync::Arc;
     let mut ability = Ability::new();
     ability
-        .can_matching(Some("read"), Some("Post"), Rc::new(|_| true))
+        .can_matching(Some("read"), Some("Post"), Arc::new(|_| true))
         .unwrap();
     assert_eq!(
         accessible_by_sql(&ability, "read", "Post", "posts").unwrap_err(),

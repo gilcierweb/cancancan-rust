@@ -2,7 +2,7 @@ use cancancan_core::{Ability, CanCanError, Condition, DbValue};
 use cancancan_sqlx::{ColumnMap, ColumnType, accessible_by, push_condition};
 use sqlx::QueryBuilder;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 
 const USER_UUID: &str = "5c9a3a31-4c8f-4f3a-8f9d-1a2b3c4d5e6f";
 
@@ -164,7 +164,7 @@ fn nested_and_matcher_rejected() {
 
     let mut ability = Ability::new();
     ability
-        .can_matching(Some("read"), Some("Post"), Rc::new(|_| true))
+        .can_matching(Some("read"), Some("Post"), Arc::new(|_| true))
         .unwrap();
     let mut builder = QueryBuilder::<sqlx::Postgres>::new("");
     assert_eq!(
