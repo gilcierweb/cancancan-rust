@@ -46,15 +46,22 @@ marked as:
 |---|---|---|
 | `can?`/`cannot?` in controllers/views | `CurrentAbility::can_check`/`cannot_check` extractors | ✅ |
 | `authorize!` in controller | `CurrentAbility::authorize`/`authorize_type` (403/500 mapping) | ✅ |
-| `check_authorization` (ddos guard 500 if no authorize) | `cancancan_axum::check_authorization` / `cancancan_actix::check_authorization` middleware | ✅ |
+| `load_resource` (load record only, 404/500) | `CurrentAbility::load_resource` | ✅ |
+| `authorize_resource` (authorize already-loaded) | `CurrentAbility::authorize_resource` | ✅ |
+| `load_and_authorize_resource` | `CurrentAbility::load_and_authorize` | ✅ |
+| `check_authorization` (500 if no authorize on success) | `check_authorization` middleware (axe+actix) | ✅ |
 | `skip_authorization_check` | `CurrentAbility::skip_authorization_check()` | ✅ |
-| `load_and_authorize_resource` / `load_resource` / `authorize_resource` (load via DB by id/collection) | not ported (would require framework+ORM bridging layer) | ❌ deferred |
+| Rails controller options (`:through`, `:shallow`, `:singleton`, `:parent`, `:class`, `:instance_name`) | encode Rails conventions with no Rust equivalent; loaders own the DB lookup closure | ❌ by design |
 
-## Deferred (not ported — tracked)
+## Deferred (not ported — by design)
 
-- **`load_and_authorize_resource` family**: Rails-side controller resource loader that fetches records through ActiveRecord. Needs the ORM adapters + web framework integration to be combined intentionally; left as future work (could be a `cancancan-web` helper crate that builds a `CurrentAbility`-style extractor accepting a `loader` closure).
-- **Extendable `authorize` exposure to views** — not appliable in Rust (no helpers/view layer automatically).
-- **Generator CLI** (`rails g cancan:ability`): `cancancan-cli` scaffold exists (crate-level, not yet registered in releases).
+- **Rails controller-macro options** (`:through`, `:shallow`, `:singleton`,
+  `:parent`, `:class`, `:instance_name`): those encode Rails conventions with no
+  direct Rust equivalent. Handlers call `load_and_authorize` with a loader
+  closure that owns the DB lookup instead.
+- **Views**: Rails helpers (`can?`/`cannot?` in templates) map to calling
+  `can_check` wherever you hold the ability; no separate integration needed.
+- **Generator CLI** (`rails g cancan:ability`): `cancancan-cli scaffold` exists.
 
 ## Known divergences (documented in code)
 
