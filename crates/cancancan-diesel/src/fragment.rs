@@ -171,7 +171,6 @@ fn qualified(table: &str, field: &str) -> Result<String, CanCanError> {
     Ok(format!("\"{table}\".\"{field}\""))
 }
 
-
 fn value_sql(value: &DbValue) -> Result<String, CanCanError> {
     match value {
         DbValue::Null => Ok("NULL".to_owned()),

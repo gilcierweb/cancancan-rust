@@ -112,8 +112,11 @@ fn column_expr(table_name: &str, columns: &ColumnMap, field: &str) -> Result<Exp
     Ok(Expr::col((Alias::new(table_name), Alias::new(field))))
 }
 
-fn column_type_of(columns: &ColumnMap, field: &str) -> ColumnType {
-    *columns.get(field).unwrap_or(&ColumnType::Text)
+fn column_type_of(columns: &ColumnMap, field: &str) -> Result<ColumnType, CanCanError> {
+    columns
+        .get(field)
+        .copied()
+        .ok_or(CanCanError::AttributeArgument)
 }
 
 /// Renders a [`Condition`] as a `sea-query` [`SimpleExpr`].
@@ -196,7 +199,7 @@ fn eq_expr(
     value: &DbValue,
     negated: bool,
 ) -> Result<SimpleExpr, CanCanError> {
-    let column_type = column_type_of(columns, field);
+    let column_type = column_type_of(columns, field)?;
     let bound = db_value_to_sea(value, column_type)?;
     let expr = column_expr(table_name, columns, field)?.eq(bound);
     Ok(if negated { expr.not() } else { expr })
@@ -213,7 +216,7 @@ fn in_expr(
         let sql = if negated { "1 = 1" } else { "1 = 0" };
         return Ok(Expr::cust(sql));
     }
-    let column_type = column_type_of(columns, field);
+    let column_type = column_type_of(columns, field)?;
     let mut bound: Vec<SeaValue> = Vec::with_capacity(values.len());
     for value in values {
         bound.push(db_value_to_sea(value, column_type)?);
@@ -229,7 +232,7 @@ fn between_expr(
     min: &DbValue,
     max: &DbValue,
 ) -> Result<SimpleExpr, CanCanError> {
-    let column_type = column_type_of(columns, field);
+    let column_type = column_type_of(columns, field)?;
     let min_val = db_value_to_sea(min, column_type)?;
     let max_val = db_value_to_sea(max, column_type)?;
     Ok(column_expr(table_name, columns, field)?.between(min_val, max_val))

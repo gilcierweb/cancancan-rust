@@ -25,14 +25,16 @@ fn main() {
         Command::Scaffold { output } => {
             if let Some(parent) = output.parent() {
                 if !parent.as_os_str().is_empty() {
-                    std::fs::create_dir_all(parent).unwrap_or_else(|error| {
-                        panic!("cannot create output directory: {error}");
-                    });
+                    if let Err(error) = std::fs::create_dir_all(parent) {
+                        eprintln!("cannot create output directory: {error}");
+                        std::process::exit(1);
+                    }
                 }
             }
-            std::fs::write(&output, render_template()).unwrap_or_else(|error| {
-                panic!("cannot write ability template: {error}");
-            });
+            if let Err(error) = std::fs::write(&output, render_template()) {
+                eprintln!("cannot write ability template: {error}");
+                std::process::exit(1);
+            }
             println!("ability scaffold written to {}", output.display());
         }
     }

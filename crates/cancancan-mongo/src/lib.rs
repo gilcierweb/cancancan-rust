@@ -227,10 +227,11 @@ fn joined_doc(
         });
     }
     if list.len() == 1 {
-        return match list.remove(0) {
-            bson::Bson::Document(doc) => Ok(doc),
-            _ => unreachable!("list only holds documents"),
+        let first = list.remove(0);
+        let bson::Bson::Document(doc) = first else {
+            return Ok(bson::doc! {});
         };
+        return Ok(doc);
     }
     Ok(bson::doc! { group: list })
 }
