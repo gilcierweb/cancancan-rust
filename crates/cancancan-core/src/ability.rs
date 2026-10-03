@@ -82,13 +82,25 @@ impl Ability {
     }
 
     /// Registers an alias, so checking the alias also checks every mapped action.
-    pub fn alias_action<I, S>(&mut self, actions: I, target: S) -> &mut Self
+    ///
+    /// Mirrors the gem `alias_action`, including its `validate_target` guard.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CanCanError::InvalidAliasTarget`] when `target` is already
+    /// mapped as a concrete action of another alias.
+    pub fn alias_action<I, S>(&mut self, actions: I, target: S) -> Result<&mut Self, CanCanError>
     where
         I: IntoIterator<Item = S>,
         S: Into<String>,
     {
-        self.actions.alias_action(actions, target);
-        self
+        let target = target.into();
+        if self.actions.collides_with_mapping(&target) {
+            return Err(CanCanError::InvalidAliasTarget(target));
+        }
+        let mapped: Vec<String> = actions.into_iter().map(Into::into).collect();
+        self.actions.alias_action(mapped, target);
+        Ok(self)
     }
 
     /// Removes every action alias, including the defaults.
@@ -381,6 +393,49 @@ impl Ability {
             subject: subject_type.clone(),
             message: Some(self.unauthorized_message(action, &subject_type)),
         })
+    }
+
+    /// [`Ability::authorize_subject`] with an explicit denial message,
+    /// mirroring the gem `authorize!(*args, message:)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`CanCanError::AccessDenied`] carrying `message` verbatim when
+    /// the check fails.
+    pub fn authorize_message(
+        &self,
+        action: &str,
+        subject: SubjectRef<'_>,
+        message: &str,
+    ) -> Result<(), CanCanError> {
+        if self.evaluate(action, subject, None) {
+            return Ok(());
+        }
+        let subject_type = match subject {
+            SubjectRef::Type(name) => name.to_owned(),
+            SubjectRef::Instance(instance) => instance.subject_type().to_owned(),
+        };
+        Err(CanCanError::AccessDenied {
+            action: action.to_owned(),
+            subject: subject_type,
+            message: Some(message.to_owned()),
+        })
+    }
+
+    /// Checks whether `action` is permitted on at least one subject,
+    /// mirroring the gem `can?(action, any: [...])` form.
+    #[must_use]
+    pub fn can_check_any_of(&self, action: &str, subjects: &[&dyn SubjectInstance]) -> bool {
+        subjects
+            .iter()
+            .any(|subject| self.can_check(action, *subject))
+    }
+
+    /// Reverse lookup of aliases expanding to `action`, mirroring the gem
+    /// `aliases_for_action` used by the i18n resolver.
+    #[must_use]
+    pub fn aliases_for_action(&self, action: &str) -> Vec<String> {
+        self.actions.aliases_for(action)
     }
 
     /// Merges every rule and alias from `other` into this ability.

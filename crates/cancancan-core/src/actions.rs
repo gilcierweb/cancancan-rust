@@ -68,6 +68,15 @@ impl Actions {
             .collect()
     }
 
+    /// Whether `name` is used as a mapped action by some existing alias,
+    /// mirroring the gem `validate_target` predicate.
+    #[must_use]
+    pub fn collides_with_mapping(&self, name: &str) -> bool {
+        self.aliases
+            .values()
+            .any(|mapped| mapped.contains(&name.to_owned()))
+    }
+
     /// Removes every registered alias, including the defaults.
     pub fn clear(&mut self) {
         self.aliases.clear();

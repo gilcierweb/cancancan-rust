@@ -44,4 +44,9 @@ pub enum CanCanError {
     /// Raised when a raw SQL condition reaches an adapter without SQL support.
     #[error("raw SQL conditions are not supported by the {0} adapter")]
     RawSqlNotSupported(&'static str),
+
+    /// Raised when an alias target collides with a real action name,
+    /// mirroring the gem `validate_target` guard.
+    #[error("alias target ({0}) collides with a real action name")]
+    InvalidAliasTarget(String),
 }

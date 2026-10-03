@@ -1,6 +1,6 @@
 mod common;
 
-use cancancan_core::{Ability, CanCanError, Condition, DbValue};
+use cancancan_core::{Ability, CanCanError, Condition, DbValue, SubjectRef};
 use common::{MapSubject, Post, User};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -88,7 +88,7 @@ fn default_aliases_expand_read_create_and_update() {
 #[test]
 fn custom_alias_applies_to_checks() {
     let mut ability = Ability::new();
-    ability.alias_action(["show"], "preview");
+    ability.alias_action(["show"], "preview").unwrap();
     ability.can(Some("preview"), Some("Post")).unwrap();
 
     assert!(ability.can_check_type("show", "Post"));
@@ -146,6 +146,54 @@ fn block_matcher_decides_at_check_time() {
     assert!(ability.can_check("read", &released));
     assert!(!ability.can_check("read", &draft));
     assert!(ability.can_check_type("read", "Post"));
+}
+
+#[test]
+fn any_of_matches_when_any_subject_matches() {
+    let ability = owner_ability();
+    let mine = Post::owned(1, 1);
+    let theirs = Post::owned(2, 2);
+    assert!(ability.can_check_any_of("read", &[&mine, &theirs]));
+    assert!(!ability.can_check_any_of("update", &[&mine, &theirs]));
+}
+
+#[test]
+fn aliases_for_action_reverse_lookup() {
+    let ability = Ability::new();
+    assert_eq!(ability.aliases_for_action("show"), vec!["read".to_owned()]);
+    assert!(ability.aliases_for_action("destroy").is_empty());
+}
+
+#[test]
+fn alias_target_colliding_with_mapped_action_is_rejected() {
+    let mut ability = Ability::new();
+    let error = ability.alias_action(["read"], "show").unwrap_err();
+    assert_eq!(error, CanCanError::InvalidAliasTarget("show".to_owned()));
+}
+
+#[test]
+fn authorize_message_overrides_default() {
+    let ability = owner_ability();
+    let error = ability
+        .authorize_message(
+            "read",
+            SubjectRef::Instance(&Post::owned(2, 2)),
+            "custom denial",
+        )
+        .unwrap_err();
+    assert_eq!(
+        error,
+        CanCanError::AccessDenied {
+            action: "read".to_owned(),
+            subject: "Post".to_owned(),
+            message: Some("custom denial".to_owned()),
+        }
+    );
+    assert!(
+        ability
+            .authorize_message("read", SubjectRef::Instance(&Post::owned(1, 1)), "unused")
+            .is_ok()
+    );
 }
 
 #[test]
