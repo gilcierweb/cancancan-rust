@@ -336,32 +336,27 @@ cargo test --workspace --exclude cancancan-mongo
 
 ## Contributing
 
-1. Pick a roadmap phase and keep changes inside `cancancan-rust/`.
-2. Mirror the gem's semantics; cite the gem file and line in comments when
-   porting behavior.
-3. Add or extend tests first (both sync and async modes where applicable).
-4. Run the full [quality gates](#quality-gates) suite.
-5. Suggest a Conventional Commits title in English (commits are made
-   manually by the maintainer; automation never commits).
-
-## Contributing
-
 Contributions are welcome! Feel free to open issues and pull requests.
+
+1. Keep changes inside `cancancan-rust/`; commit only from this directory.
+2. Mirror the gem's semantics; cite the source file/line in comments when
+   porting behavior.
+3. Add tests first (both sync and async where applicable).
+4. Ensure the quality gates pass before suggesting a PR.
+5. Target Conventional Commits titles in English.
 
 ## Inspiration
 
-Inspired by the legendary [Ruby Cancancan gem](https://github.com/cancancommunity/cancancan) CanCanCan-Rust brings its intuitive, battle-tested authorization to the Rust ecosystem, reimagined with Rust's performance, safety and compile-time guarantees.
+Inspired by the legendary [Ruby CanCanCan gem](https://github.com/CanCanCommunity/cancancan). CanCanCan-Rust brings its intuitive,
+battle-tested authorization model to the Rust ecosystem - with Rust's
+performance, safety and compile-time guarantees.
 
 ## License
 
 Released under the [MIT License](LICENSE).
 
 ### Links
-- Website: https://github.com/gilcierweb/cancancan-rust
 - Repository: https://github.com/gilcierweb/cancancan-rust
-- Documentation: https://docs.rs/cancancan-rust
-- [Ruby Cancancan gem](https://github.com/cancancommunity/cancancan) 
-
 
 ### Author
-Built and maintained by [GilcierWeb](https://gilcierweb.com.br) - https://gilcierweb.com.br
+Built and maintained by [GilcierWeb](https://gilcierweb.com.br).
