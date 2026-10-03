@@ -33,13 +33,19 @@ adapts a chapter of the gem's official documentation to the Rust API.
 - [Check abilities - common mistakes](./check_abilities_mistakes.md) - type vs instance checks
 - [Handling access denied](./handling_access_denied.md) - `CanCanError`, 403/404 policy
 - [Internationalization](./internationalization.md) - translated denial messages
-- [Web integration](./web-integration.md) - axum + actix extractors
+- [Web integration](./web-integration.md) - extractors and middleware concepts
+- [Axum](./web-axum.md) - `cancancan-axum` example guide
+- [Actix-web](./web-actix.md) - `cancancan-actix` example guide
 - [Error handling](./error-handling.md) - the full `CanCanError` surface
 - [Debugging](./debugging.md) - inspecting rules and check outcomes
 - [Testing](./testing.md) - unit, query and request layers
 
 ### Query adapters
-- [Query adapters - overview](./query-adapters.md) - `accessible_by` for Diesel / SeaORM / SQLx / MongoDB
+- [Query adapters - overview](./query-adapters.md) - shared contract of `accessible_by`
+- [Diesel](./adapters-diesel.md) - typed predicates and SQL fragments
+- [SeaORM](./adapters-seaorm.md) - `sea-query` conditions for find/update/delete
+- [SQLx](./adapters-sqlx.md) - `QueryBuilder` integration with binds
+- [MongoDB](./adapters-mongo.md) - BSON filter documents, null and UUID semantics
 - [Model adapters](./model_adapter.md) - writing your own backend adapter
 - [SQL strategies](./sql_strategies.md) - current SQL-generation behavior
 
