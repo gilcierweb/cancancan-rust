@@ -10,5 +10,12 @@ cancancan-core = { path = "../cancancan-core" }
 bson = { workspace = true }
 uuid = { version = "1", features = ["v4"] }
 
+[dev-dependencies]
+mongodb = "3.6"
+futures = "0.3"
+testcontainers = { version = "0.27" }
+testcontainers-modules = { version = "0.15", features = ["mongo"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+
 [lints]
 workspace = true

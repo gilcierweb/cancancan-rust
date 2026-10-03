@@ -22,9 +22,20 @@
 //! - `Condition::Not` renders as `$nor` (De Morgan safe against `$ne null`
 //!   semantics).
 //! - A rule set with no `can` predicate renders `$expr: false` (matches
-//!   nothing); a catch-all rule renders the empty document (matches all).
+//!   nothing; requires server 3.6+); a catch-all rule renders the empty
+//!   document (matches all).
 //! - `Condition::RawSql` mirrors the gem SQL escape hatch and has no MongoDB
 //!   mapping, so it surfaces as [`CanCanError::RawSqlNotSupported`].
+//!
+//! # Semantics diverging from SQL (read before relying on them)
+//!
+//! - `{ field: null }` matches documents where the field is missing **or**
+//!   null (Mongo treats absent as null); `$ne: null` matches only documents
+//!   where the field exists. There is no row-level `NOT NULL` equivalent.
+//! - [`ColumnType::Uuid`] binds canonical text; documents storing UUIDs as
+//!   BSON binary (subtype 4) need a native `Bson::Binary` bind, not yet
+//!   exposed here.
+//! - `ColumnMap` is keyed by leaf field name regardless of nesting depth.
 
 use std::collections::HashMap;
 
