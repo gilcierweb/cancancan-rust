@@ -34,4 +34,4 @@
 
 use crate::typed::backend_predicates;
 
-backend_predicates!(diesel::sqlite::Sqlite);
+backend_predicates!(diesel::sqlite::Sqlite; uuid: (diesel::sql_types::Text, crate::typed::as_uuid_text));

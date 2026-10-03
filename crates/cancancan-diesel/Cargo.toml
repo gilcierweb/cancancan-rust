@@ -9,16 +9,17 @@ license = "MIT"
 cancancan-core = { path = "../cancancan-core" }
 diesel = { workspace = true }
 diesel-dynamic-schema = "0.2.3"
+uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]
 rstest.workspace = true
 diesel = { workspace = true, features = ["sqlite"] }
-libsqlite3-sys = { version = "0.28", features = ["bundled"] }
+libsqlite3-sys = { workspace = true }
 
 [features]
 default = []
 sqlite = ["diesel/sqlite", "diesel-dynamic-schema/sqlite"]
-postgres = ["diesel/postgres", "diesel-dynamic-schema/postgres"]
+postgres = ["diesel/postgres", "diesel-dynamic-schema/postgres", "diesel/uuid"]
 
 [lints]
 workspace = true

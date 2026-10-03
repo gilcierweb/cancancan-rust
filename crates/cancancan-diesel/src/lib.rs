@@ -47,6 +47,7 @@
 //! ```
 
 mod fragment;
+#[cfg(any(feature = "sqlite", feature = "postgres"))]
 mod typed;
 
 #[cfg(feature = "postgres")]
@@ -56,4 +57,5 @@ pub mod sqlite;
 
 pub use cancancan_core::{Ability, CanCanError, Condition, DbValue};
 pub use fragment::{accessible_by_sql, condition_sql};
+#[cfg(any(feature = "sqlite", feature = "postgres"))]
 pub use typed::{ColumnMap, ColumnType};

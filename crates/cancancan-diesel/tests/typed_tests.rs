@@ -141,19 +141,71 @@ fn unknown_field_is_rejected() {
 }
 
 #[test]
-fn value_type_mismatch_is_rejected() {
+fn values_travel_as_bind_parameters() {
     let mut ability = Ability::new();
     ability
-        .can_where(
-            Some("read"),
-            Some("Post"),
-            eq("user_id", DbValue::from("one")),
-        )
+        .can_where(Some("read"), Some("Post"), eq("user_id", DbValue::Int(1)))
         .unwrap();
-    assert_eq!(
-        accessible_by::<posts::table>(&ability, "read", "Post", "posts", &columns()).err(),
-        Some(CanCanError::AttributeArgument)
+    let predicate =
+        accessible_by::<posts::table>(&ability, "read", "Post", "posts", &columns()).unwrap();
+    let query = posts::table.select(posts::id).filter(predicate);
+    let debug = diesel::debug_query::<diesel::sqlite::Sqlite, _>(&query).to_string();
+    assert!(
+        debug.contains("`posts`.`user_id` = ?"),
+        "expected placeholder: {debug}"
     );
+    assert!(debug.contains("binds: [1]"), "expected bind value: {debug}");
+}
+
+#[cfg(feature = "postgres")]
+mod uuid_postgres {
+    use super::*;
+    use cancancan_diesel::postgres::accessible_by as accessible_by_pg;
+
+    const USER_UUID: &str = "5c9a3a31-4c8f-4f3a-8f9d-1a2b3c4d5e6f";
+
+    fn uuid_columns() -> ColumnMap {
+        HashMap::from([
+            ("id".to_owned(), ColumnType::Uuid),
+            ("user_id".to_owned(), ColumnType::Uuid),
+            ("legacy_id".to_owned(), ColumnType::BigInt),
+        ])
+    }
+
+    #[test]
+    fn uuid_primary_key_binds_natively() {
+        let mut ability = Ability::new();
+        ability
+            .can_where(
+                Some("read"),
+                Some("Post"),
+                eq("id", DbValue::from(USER_UUID)),
+            )
+            .unwrap();
+        let predicate =
+            accessible_by_pg::<posts::table>(&ability, "read", "Post", "posts", &uuid_columns())
+                .unwrap();
+        let query = posts::table.select(posts::id).filter(predicate);
+        let debug = diesel::debug_query::<diesel::pg::Pg, _>(&query).to_string();
+        assert!(debug.contains("= $1"), "expected bind placeholder: {debug}");
+    }
+
+    #[test]
+    fn invalid_uuid_string_is_rejected() {
+        let mut ability = Ability::new();
+        ability
+            .can_where(
+                Some("read"),
+                Some("Post"),
+                eq("id", DbValue::from("not-a-uuid")),
+            )
+            .unwrap();
+        assert_eq!(
+            accessible_by_pg::<posts::table>(&ability, "read", "Post", "posts", &uuid_columns())
+                .err(),
+            Some(CanCanError::AttributeArgument)
+        );
+    }
 }
 
 #[test]
@@ -185,21 +237,4 @@ fn matcher_rule_is_rejected() {
         accessible_by::<posts::table>(&ability, "read", "Post", "posts", &columns()).err(),
         Some(CanCanError::BlockInQuery)
     );
-}
-
-#[test]
-fn values_travel_as_bind_parameters() {
-    let mut ability = Ability::new();
-    ability
-        .can_where(Some("read"), Some("Post"), eq("user_id", DbValue::Int(1)))
-        .unwrap();
-    let predicate =
-        accessible_by::<posts::table>(&ability, "read", "Post", "posts", &columns()).unwrap();
-    let query = posts::table.select(posts::id).filter(predicate);
-    let debug = diesel::debug_query::<diesel::sqlite::Sqlite, _>(&query).to_string();
-    assert!(
-        debug.contains("`posts`.`user_id` = ?"),
-        "expected placeholder: {debug}"
-    );
-    assert!(debug.contains("binds: [1]"), "expected bind value: {debug}");
 }

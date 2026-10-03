@@ -6,4 +6,4 @@
 
 use crate::typed::backend_predicates;
 
-backend_predicates!(diesel::pg::Pg);
+backend_predicates!(diesel::pg::Pg; uuid: (diesel::sql_types::Uuid, crate::typed::as_uuid_native));

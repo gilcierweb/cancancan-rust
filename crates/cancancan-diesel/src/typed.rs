@@ -24,6 +24,9 @@ pub enum ColumnType {
     Text,
     /// Boolean (`Bool`, Rust `bool`).
     Bool,
+    /// UUID column. Postgres binds natively (`diesel::sql_types::Uuid`);
+    /// SQLite binds as validated text (UUIDs stored as text there).
+    Uuid,
 }
 
 /// Maps field names to their SQL column types for one subject table.
@@ -32,11 +35,13 @@ pub type ColumnMap = HashMap<String, ColumnType>;
 /// Binds `$col` to the dynamically-typed column and `$conv` to the matching
 /// value-conversion function, then evaluates `$body`.
 ///
-/// Collapses the per-SQL-type dispatch (seven near-identical arms) into one
+/// Collapses the per-SQL-type dispatch (eight near-identical arms) into one
 /// definition per predicate shape. SQL types use absolute paths so the macro
-/// expands in backend modules without imports.
+/// expands in backend modules without imports. The UUID arm's column SQL
+/// type and converter are parameters, because they differ per backend
+/// (native on Postgres, validated text on SQLite).
 macro_rules! dispatch_column {
-    ($column_type:expr, $dynamic:expr, $name:expr, |$col:ident, $conv:ident| $body:expr) => {
+    ($uuid_col_ty:ty, $uuid_conv:path, $column_type:expr, $dynamic:expr, $name:expr, |$col:ident, $conv:ident| $body:expr) => {
         match $column_type {
             crate::typed::ColumnType::SmallInt => {
                 let $col = $dynamic.column::<diesel::sql_types::SmallInt, _>($name);
@@ -73,6 +78,11 @@ macro_rules! dispatch_column {
                 let $conv = crate::typed::as_bool;
                 $body
             }
+            crate::typed::ColumnType::Uuid => {
+                let $col = $dynamic.column::<$uuid_col_ty, _>($name);
+                let $conv = $uuid_conv;
+                $body
+            }
         }
     };
 }
@@ -86,7 +96,7 @@ pub(crate) use dispatch_column;
 /// function touching Diesel expressions is monomorphized per backend while
 /// conversions and dispatch stay generic and shared.
 macro_rules! backend_predicates {
-    ($db:ty) => {
+    ($db:ty; uuid: ($uuid_col_ty:ty, $uuid_conv:path)) => {
         fn _always<QS: 'static>() -> Box<
             dyn diesel::expression::BoxableExpression<QS, $db, SqlType = diesel::sql_types::Bool>,
         > {
@@ -186,14 +196,21 @@ macro_rules! backend_predicates {
             use diesel::expression_methods::ExpressionMethods as _ExpressionMethods;
             let (name, column_type) = crate::typed::lookup(columns, field)?;
             let dynamic = diesel_dynamic_schema::table(table_name.to_owned());
-            crate::typed::dispatch_column!(column_type, dynamic, name, |column, convert| {
-                let bound = convert(value)?;
-                Ok(if negated {
-                    Box::new(column.ne(bound))
-                } else {
-                    Box::new(column.eq(bound))
-                })
-            })
+            crate::typed::dispatch_column!(
+                $uuid_col_ty,
+                $uuid_conv,
+                column_type,
+                dynamic,
+                name,
+                |column, convert| {
+                    let bound = convert(value)?;
+                    Ok(if negated {
+                        Box::new(column.ne(bound))
+                    } else {
+                        Box::new(column.eq(bound))
+                    })
+                }
+            )
         }
 
         fn _in_predicate<QS: 'static>(
@@ -218,14 +235,21 @@ macro_rules! backend_predicates {
             }
             let (name, column_type) = crate::typed::lookup(columns, field)?;
             let dynamic = diesel_dynamic_schema::table(table_name.to_owned());
-            crate::typed::dispatch_column!(column_type, dynamic, name, |column, convert| {
-                let bound = crate::typed::convert_many(values, convert)?;
-                Ok(if negated {
-                    Box::new(column.ne_all(bound))
-                } else {
-                    Box::new(column.eq_any(bound))
-                })
-            })
+            crate::typed::dispatch_column!(
+                $uuid_col_ty,
+                $uuid_conv,
+                column_type,
+                dynamic,
+                name,
+                |column, convert| {
+                    let bound = crate::typed::convert_many(values, convert)?;
+                    Ok(if negated {
+                        Box::new(column.ne_all(bound))
+                    } else {
+                        Box::new(column.eq_any(bound))
+                    })
+                }
+            )
         }
 
         fn _between_predicate<QS: 'static>(
@@ -247,9 +271,14 @@ macro_rules! backend_predicates {
             use diesel::expression_methods::ExpressionMethods as _ExpressionMethods;
             let (name, column_type) = crate::typed::lookup(columns, field)?;
             let dynamic = diesel_dynamic_schema::table(table_name.to_owned());
-            crate::typed::dispatch_column!(column_type, dynamic, name, |column, convert| {
-                Ok(Box::new(column.between(convert(min)?, convert(max)?)))
-            })
+            crate::typed::dispatch_column!(
+                $uuid_col_ty,
+                $uuid_conv,
+                column_type,
+                dynamic,
+                name,
+                |column, convert| { Ok(Box::new(column.between(convert(min)?, convert(max)?))) }
+            )
         }
 
         fn _null_predicate<QS: 'static>(
@@ -270,13 +299,20 @@ macro_rules! backend_predicates {
             use diesel::expression_methods::ExpressionMethods as _ExpressionMethods;
             let (name, column_type) = crate::typed::lookup(columns, field)?;
             let dynamic = diesel_dynamic_schema::table(table_name.to_owned());
-            crate::typed::dispatch_column!(column_type, dynamic, name, |column, _convert| {
-                Ok(if is_null {
-                    Box::new(column.is_null())
-                } else {
-                    Box::new(column.is_not_null())
-                })
-            })
+            crate::typed::dispatch_column!(
+                $uuid_col_ty,
+                $uuid_conv,
+                column_type,
+                dynamic,
+                name,
+                |column, _convert| {
+                    Ok(if is_null {
+                        Box::new(column.is_null())
+                    } else {
+                        Box::new(column.is_not_null())
+                    })
+                }
+            )
         }
 
         /// Renders a [`cancancan_core::Condition`] as a boxed Diesel predicate
@@ -500,6 +536,19 @@ pub(crate) fn as_bool(value: &DbValue) -> Result<bool, CanCanError> {
         DbValue::Bool(flag) => Ok(*flag),
         _ => Err(CanCanError::AttributeArgument),
     }
+}
+
+pub(crate) fn as_uuid_native(value: &DbValue) -> Result<uuid::Uuid, CanCanError> {
+    match value {
+        DbValue::Str(text) => {
+            uuid::Uuid::parse_str(text).map_err(|_| CanCanError::AttributeArgument)
+        }
+        _ => Err(CanCanError::AttributeArgument),
+    }
+}
+
+pub(crate) fn as_uuid_text(value: &DbValue) -> Result<String, CanCanError> {
+    as_uuid_native(value).map(|id| id.to_string())
 }
 
 pub(crate) fn convert_many<T>(
