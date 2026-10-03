@@ -34,9 +34,13 @@ fn object_id_parsed_and_bound_natively() {
 }
 
 #[test]
-fn uuid_validated_and_bound_as_canonical_text() {
+fn uuid_validated_and_bound_as_native_binary() {
     let filter = condition_to_doc(&eq("user_id", DbValue::from(USER_UUID)), &columns()).unwrap();
-    assert_eq!(filter, doc! { "user_id": USER_UUID });
+    let expected = bson::Binary::from_uuid_with_representation(
+        uuid::Uuid::parse_str(USER_UUID).unwrap().into(),
+        bson::uuid::UuidRepresentation::Standard,
+    );
+    assert_eq!(filter, doc! { "user_id": bson::Bson::Binary(expected) });
 
     let error =
         condition_to_doc(&eq("user_id", DbValue::from("not-a-uuid")), &columns()).unwrap_err();
@@ -59,9 +63,9 @@ fn int_bound_types_follow_column_width() {
 }
 
 #[test]
-fn eq_null_ne_null() {
+fn eq_null_ne_null_are_strict() {
     let filter = condition_to_doc(&eq("title", DbValue::Null), &columns()).unwrap();
-    assert_eq!(filter, doc! { "title": bson::Bson::Null });
+    assert_eq!(filter, doc! { "title": { "$type": "null" } });
 
     let filter = condition_to_doc(
         &Condition::Ne {
@@ -71,7 +75,10 @@ fn eq_null_ne_null() {
         &columns(),
     )
     .unwrap();
-    assert_eq!(filter, doc! { "title": { "$ne": bson::Bson::Null } });
+    assert_eq!(
+        filter,
+        doc! { "title": { "$exists": true, "$ne": bson::Bson::Null } }
+    );
 }
 
 #[test]
@@ -148,7 +155,7 @@ fn and_or_not_shape() {
     .unwrap();
     assert_eq!(
         filter,
-        doc! { "$or": [ { "published": true }, { "title": bson::Bson::Null } ] }
+        doc! { "$or": [ { "published": true }, { "title": { "$type": "null" } } ] }
     );
 
     let filter = condition_to_doc(
@@ -223,12 +230,16 @@ fn accessible_by_composes_or_equals_and_nor() {
         .unwrap();
 
     let filter = accessible_by(&ability, "read", "Post", &columns()).unwrap();
+    let user_id = bson::Binary::from_uuid_with_representation(
+        uuid::Uuid::parse_str(USER_UUID).unwrap().into(),
+        bson::uuid::UuidRepresentation::Standard,
+    );
     assert_eq!(
         filter,
         doc! {
             "$or": [
                 { "published": true },
-                { "user_id": USER_UUID },
+                { "user_id": bson::Bson::Binary(user_id) },
             ],
             "$nor": [
                 { "legacy_id": bson::Bson::Int64(9) },

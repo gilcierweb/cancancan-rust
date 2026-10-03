@@ -27,19 +27,22 @@
 //! - `Condition::RawSql` mirrors the gem SQL escape hatch and has no MongoDB
 //!   mapping, so it surfaces as [`CanCanError::RawSqlNotSupported`].
 //!
-//! # Semantics diverging from SQL (read before relying on them)
+//! # Semantic choices (where MongoDB absent-diverges from SQL)
 //!
-//! - `{ field: null }` matches documents where the field is missing **or**
-//!   null (Mongo treats absent as null); `$ne: null` matches only documents
-//!   where the field exists. There is no row-level `NOT NULL` equivalent.
-//! - [`ColumnType::Uuid`] binds canonical text; documents storing UUIDs as
-//!   BSON binary (subtype 4) need a native `Bson::Binary` bind, not yet
-//!   exposed here.
+//! - `IS NULL` (`Eq`/`IsNull` with `Null`) renders `{ field: { $type: "null" } }`:
+//!   only documents whose field exists with a real null. `IS NOT NULL` renders
+//!   `{ field: { $exists: true, $ne: null } }`: only documents with a present,
+//!   non-null value. Missing fields match neither, unlike loose
+//!   `{ field: null }` (which matches missing too).
+//! - [`ColumnType::Uuid`] binds native BSON binary UUID (subtype 4,
+//!   `UuidRepresentation::Standard`) — matching what `mongodb`/`bson`
+//!   serialize by default. String-stored UUIDs no longer match; declare the
+//!   field `Text` instead.
 //! - `ColumnMap` is keyed by leaf field name regardless of nesting depth.
 
 use std::collections::HashMap;
 
-use bson::{Document, oid::ObjectId};
+use bson::{Document, oid::ObjectId, uuid::UuidRepresentation};
 
 pub use cancancan_core::{Ability, CanCanError, Condition, DbValue};
 
@@ -283,9 +286,12 @@ fn is_null_doc(
     lookup(columns, field)?;
     let qualified = qualified_field(path, field)?;
     if is_null {
-        Ok(bson::doc! { qualified: bson::Bson::Null })
+        // SQL is faithful: only documents whose field exists with BSON type
+        // Null. (Loose `{ field: null }` would also match missing fields.)
+        Ok(bson::doc! { qualified: { "$type": "null" } })
     } else {
-        Ok(bson::doc! { qualified: { "$ne": bson::Bson::Null } })
+        // strict NOT NULL: field exists and holds a non-null value
+        Ok(bson::doc! { qualified: { "$exists": true, "$ne": bson::Bson::Null } })
     }
 }
 
@@ -339,7 +345,12 @@ fn db_value_to_bson(value: &DbValue, column_type: ColumnType) -> Result<bson::Bs
                 Ok(bson::Bson::ObjectId(parsed))
             }
             ColumnType::Uuid => uuid::Uuid::parse_str(text)
-                .map(|parsed| bson::Bson::String(parsed.to_string()))
+                .map(|parsed| {
+                    bson::Bson::Binary(bson::Binary::from_uuid_with_representation(
+                        parsed.into(),
+                        UuidRepresentation::Standard,
+                    ))
+                })
                 .map_err(|_| CanCanError::AttributeArgument),
             _ => Err(CanCanError::AttributeArgument),
         },
