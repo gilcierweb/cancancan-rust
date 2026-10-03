@@ -13,8 +13,10 @@ license = "MIT"
 thiserror = "2.0.21"
 clap = { version = "4", features = ["derive"] }
 diesel = { version = "2.2", default-features = false }
+sea-query = { version = "0.32", default-features = false, features = ["with-uuid", "backend-postgres", "backend-sqlite"] }
 rstest = "0.27"
 pretty_assertions = "1.4"
+libsqlite3-sys = { version = "0.28", features = ["bundled"] }
 cancancan-core = { path = "crates/cancancan-core" }
 
 [workspace.lints.rust]
