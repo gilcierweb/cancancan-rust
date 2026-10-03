@@ -10,7 +10,8 @@
 //! * [`check_authorization`]: `actix_web::middleware::from_fn` handler that
 //!   fails requests (500) whose handlers never called `authorize`, mirroring
 //!   the gem's `check_authorization`. Opt out per handler with
-//!   [`skip_authorization_check`] (mirrors `skip_authorization_check`).
+//!   [`skip_authorization_check`](CurrentAbility::skip_authorization_check)
+//!   (mirrors `skip_authorization_check`).
 //! * [`AuthorizationError`]: maps [`CanCanError::AccessDenied`] to 403 and
 //!   everything else to 500.
 

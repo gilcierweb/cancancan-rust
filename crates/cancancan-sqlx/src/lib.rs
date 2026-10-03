@@ -1,6 +1,6 @@
 //! Query filtering for `sqlx`, mirroring `accessible_by` from the Ruby gem.
 //!
-//! Pushes an [`Ability`](cancancan_core::Ability) into a
+//! Pushes an [`Ability`] into a
 //! [`sqlx::QueryBuilder`] as `WHERE` conditions with bind parameters
 //! (placeholders are numbered per backend: `$N` for Postgres, `?` for
 //! MySQL/SQLite):

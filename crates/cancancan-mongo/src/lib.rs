@@ -1,6 +1,6 @@
 //! Query filtering for MongoDB, mirroring `accessible_by` from the Ruby gem.
 //!
-//! Renders an [`Ability`](cancancan_core::Ability) as a `bson` filter
+//! Renders an [`Ability`] as a `bson` filter
 //! [`Document`], accepted by `mongodb::Collection::find`,
 //! `find_one`, `delete_many`, `update_many` and `count_documents`:
 //!

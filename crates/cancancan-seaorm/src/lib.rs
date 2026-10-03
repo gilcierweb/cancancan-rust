@@ -1,7 +1,7 @@
 //! Query filtering for `sea-query`, mirroring `accessible_by` from
 //! the Ruby gem.
 //!
-//! Renders an [`Ability`](cancancan_core::Ability) as a `sea-query`
+//! Renders an [`Ability`] as a `sea-query`
 //! `Condition`, accepted by `sea-orm` through `QueryFilter::filter` /
 //! `SelectStatement::cond_where`:
 //!

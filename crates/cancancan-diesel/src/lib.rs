@@ -4,8 +4,8 @@
 //!
 //! * Typed predicates (`sqlite::accessible_by`, `postgres::accessible_by`):
 //!   boxed Diesel expressions with bind parameters, composable with any
-//!   query builder call. Needs one [`ColumnMap`] per subject table and the
-//!   matching backend feature.
+//!   query builder call. Needs one `ColumnMap` (crate root) per subject
+//!   table and the matching backend feature.
 //! * [`accessible_by_sql`]: a SQL `WHERE` fragment with inlined literals,
 //!   backend-agnostic, also covering joined associations and raw SQL
 //!   inspection. Prefer it for logging and for cases the typed path rejects.
