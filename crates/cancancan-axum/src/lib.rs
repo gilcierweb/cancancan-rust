@@ -125,6 +125,67 @@ impl CurrentAbility {
         self.ability.cannot_check(action, subject)
     }
 
+    /// Authorizes the instance (mirrors `authorize_resource`; only marks the
+    /// request, no loading).
+    ///
+    /// # Errors
+    ///
+    /// Same semantics as [`CurrentAbility::authorize`].
+    pub fn authorize_resource(
+        &self,
+        action: &str,
+        subject: &dyn SubjectInstance,
+    ) -> Result<(), AuthorizationError> {
+        self.authorize(action, subject)
+    }
+
+    /// Loads `subject` with `loader`, then authorizes it (mirrors
+    /// `load_and_authorize_resource`).
+    ///
+    /// The `loader` returns `Ok(Some(subject))` when found, `Ok(None)` when
+    /// not found (404), or an error (500).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AuthorizationError`] on permission failure (403), missing
+    /// record (404) or loader failure (500).
+    pub async fn load_and_authorize<T, E>(
+        &self,
+        action: &str,
+        subject_type: &str,
+        loader: impl std::future::Future<Output = Result<Option<T>, E>>,
+    ) -> Result<T, AuthorizationError>
+    where
+        T: SubjectInstance,
+        E: std::fmt::Display,
+    {
+        let _ = subject_type; // only used by callers for the error message context
+        let subject = self.load_resource(loader).await?;
+        self.authorize(action, &subject)?;
+        Ok(subject)
+    }
+
+    /// Loads with `loader` without authorizing (mirrors `load_resource`).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AuthorizationError::NotFound`] (404) when `loader` yields
+    /// `None`, or [`AuthorizationError::LoadFailed`] (500) when the loader
+    /// errors.
+    pub async fn load_resource<T, E>(
+        &self,
+        loader: impl std::future::Future<Output = Result<Option<T>, E>>,
+    ) -> Result<T, AuthorizationError>
+    where
+        T: SubjectInstance,
+        E: std::fmt::Display,
+    {
+        loader
+            .await
+            .map_err(|error| AuthorizationError::LoadFailed(error.to_string()))?
+            .ok_or_else(|| AuthorizationError::NotFound("record not found".to_owned()))
+    } // closes load_resource
+
     fn mark_checked(&self) {
         if let Some(flag) = &self.flag {
             flag.mark();
@@ -166,6 +227,10 @@ where
 pub enum AuthorizationError {
     /// Core authorization error; `AccessDenied` maps to 403, others to 500.
     Core(CanCanError),
+    /// Record not found by the loader (404).
+    NotFound(String),
+    /// Loader (database, remote call) failed (500).
+    LoadFailed(String),
 }
 
 impl From<CanCanError> for AuthorizationError {
@@ -176,17 +241,20 @@ impl From<CanCanError> for AuthorizationError {
 
 impl IntoResponse for AuthorizationError {
     fn into_response(self) -> Response {
-        let Self::Core(error) = self;
-        match &error {
-            CanCanError::AccessDenied { message, .. } => {
-                let body = message
-                    .clone()
-                    .unwrap_or_else(|| "Access denied.".to_owned());
+        match self {
+            Self::Core(CanCanError::AccessDenied { message, .. }) => {
+                let body = message.unwrap_or_else(|| "Access denied.".to_owned());
                 (StatusCode::FORBIDDEN, body).into_response()
             }
-            _other => (
+            Self::Core(error) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("Authorization error: {error}"),
+            )
+                .into_response(),
+            Self::NotFound(body) => (StatusCode::NOT_FOUND, body).into_response(),
+            Self::LoadFailed(reason) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Load failed: {reason}"),
             )
                 .into_response(),
         }
@@ -215,8 +283,11 @@ impl std::error::Error for AuthorizationError {}
 /// # Errors
 ///
 /// Returns [`AuthorizationError`] (500) wrapping
-/// [`CanCanError::AuthorizationNotPerformed`] when no extractor marked the
-/// request as authorized.
+/// [`CanCanError::AuthorizationNotPerformed`] when a **successful** handler
+/// ran without calling [`CurrentAbility::authorize`] or
+/// [`CurrentAbility::skip_authorization_check`]. Error responses (4xx/5xx)
+/// pass through unchanged, since an erroring handler never completes an
+/// authorization decision.
 pub async fn check_authorization(
     request: Request<Body>,
     next: Next,
@@ -226,7 +297,10 @@ pub async fn check_authorization(
     parts.extensions.insert(flag.clone());
     let request = Request::from_parts(parts, body);
     let response = next.run(request).await;
-    if flag.was_marked() {
+    if flag.was_marked()
+        || response.status().is_client_error()
+        || response.status().is_server_error()
+    {
         Ok(response)
     } else {
         Err(AuthorizationError::from(

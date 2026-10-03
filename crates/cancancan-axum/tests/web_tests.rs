@@ -83,10 +83,35 @@ async fn read_pending() -> Result<&'static str, cancancan_axum::AuthorizationErr
     Ok("fine")
 }
 
+async fn load_and_read(
+    ability: CurrentAbility,
+) -> Result<&'static str, cancancan_axum::AuthorizationError> {
+    let post = ability
+        .load_and_authorize::<Post, cancancan_axum::AuthorizationError>("read", "Post", async {
+            Ok(Some(Post::owned(1)))
+        })
+        .await?;
+    assert!(ability.can_check("read", &post));
+    Ok("loaded")
+}
+
+async fn load_missing(
+    ability: CurrentAbility,
+) -> Result<&'static str, cancancan_axum::AuthorizationError> {
+    ability
+        .load_and_authorize::<Post, cancancan_axum::AuthorizationError>("read", "Post", async {
+            Ok(None)
+        })
+        .await?;
+    Ok("unreachable")
+}
+
 fn app(ability: Ability) -> Router {
     Router::new()
         .route("/posts/{id}", get(read))
         .route("/posts/{id}/update", get(update))
+        .route("/posts/{id}/load", get(load_and_read))
+        .route("/posts/{id}/missing", get(load_missing))
         .route("/skip", get(skip))
         .route("/pending", get(read_pending))
         .layer(middleware::from_fn(check_authorization))
@@ -133,4 +158,46 @@ async fn authorization_not_performed_returns_500() {
         .await
         .unwrap();
     assert_eq!(response.status(), 500);
+}
+
+#[tokio::test]
+async fn load_and_authorize_marks_request_and_returns_resource() {
+    let response = app(ability_for(1, false))
+        .oneshot(
+            Request::builder()
+                .uri("/posts/1/load")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 200);
+}
+
+#[tokio::test]
+async fn load_and_authorize_denial_is_403() {
+    let response = app(ability_for(2, false))
+        .oneshot(
+            Request::builder()
+                .uri("/posts/1/load")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 403);
+}
+
+#[tokio::test]
+async fn load_and_authorize_missing_record_is_404() {
+    let response = app(ability_for(1, false))
+        .oneshot(
+            Request::builder()
+                .uri("/posts/1/missing")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 404);
 }
