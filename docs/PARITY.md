@@ -6,9 +6,9 @@ marked as:
 
 - ✅ implemented (zeroed in Rust)
 - ⚠️ adapted (semantics preserved via different Rust constructs)
-- ❌ deferred (not yet ported — tracked below)
+- ❌ deferred (not yet ported - tracked below)
 
-## `CanCan::Ability` — method by method
+## `CanCan::Ability` - method by method
 
 | Gem method | Rust implementation | Status |
 |---|---|---|
@@ -19,7 +19,7 @@ marked as:
 | `can action, subject` (rule definition) | `Ability::can`, `can_where`, `can_matching`, `can_attributes` | ✅ |
 | `cannot` (rule definition) | `Ability::cannot`, `cannot_where`, `cannot_matching`, `cannot_attributes` | ✅ |
 | `authorize!` | `Ability::authorize`, `authorize_type`, `authorize_subject` | ✅ |
-| `authorize!(…, message:)` | `Ability::authorize_message` | ✅ |
+| `authorize!(..., message:)` | `Ability::authorize_message` | ✅ |
 | `alias_action` (+ `validate_target` guard) | `Ability::alias_action` -> `Result`, `CanCanError::InvalidAliasTarget` | ✅ |
 | `aliased_actions` | `Ability::aliased_actions` | ✅ |
 | `clear_aliased_actions` | `Ability::clear_aliased_actions` | ✅ |
@@ -53,7 +53,7 @@ marked as:
 | `skip_authorization_check` | `CurrentAbility::skip_authorization_check()` | ✅ |
 | Rails controller options (`:through`, `:shallow`, `:singleton`, `:parent`, `:class`, `:instance_name`) | encode Rails conventions with no Rust equivalent; loaders own the DB lookup closure | ❌ by design |
 
-## Deferred (not ported — by design)
+## Deferred (not ported - by design)
 
 - **Rails controller-macro options** (`:through`, `:shallow`, `:singleton`,
   `:parent`, `:class`, `:instance_name`): those encode Rails conventions with no
@@ -65,8 +65,8 @@ marked as:
 
 ## Known divergences (documented in code)
 
-1. Class-level checks (`can_check_type`) do **not** evaluate conditions/matchers — identical to the gem (`can?` on a Class ignores conditions).
+1. Class-level checks (`can_check_type`) do **not** evaluate conditions/matchers - identical to the gem (`can?` on a Class ignores conditions).
 2. Adapter `Nested` conditions are **rejected with `WrongAssociation`** in Diesel/SeaORM/SQLx adapters (join inference not implemented); MongoDB supports them natively via dot-notation.
 3. **UUID**: SQLx binds UUID as validated text; Diesel typed path binds natively on Postgres (`sql_types::Uuid`) and validated text on SQLite; SeaORM binds native `sea-query::Value::Uuid`; Mongo binds native BSON Binary (subtype 4). Integers are always bound (i16/i32/i64) with overflow checks.
 4. **Null semantics in MongoDB are strict**: `IS NULL` → `$type: "null"` (present null only), unlike the loose `{ field: null }` that would also match missing fields.
-5. `CannotAttributes` rules are **rejected** by adapters' `rules_for_query` — same as the gem's `relevant_rules_for_query`.
+5. `CannotAttributes` rules are **rejected** by adapters' `rules_for_query` - same as the gem's `relevant_rules_for_query`.

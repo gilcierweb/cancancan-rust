@@ -30,7 +30,7 @@ Pass a message at the call site:
 ability.authorize_message("read", &article, "Unable to read this article.")?;
 ```
 
-Or resolve messages centrally with a resolver — the port's answer to the
+Or resolve messages centrally with a resolver - the port's answer to the
 gem's I18n message lookup (see [internationalization](./internationalization.md)):
 
 ```rust

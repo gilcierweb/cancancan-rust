@@ -41,7 +41,7 @@ were written in one function.
 ## Per-domain ability values
 
 Alternatively, build one ability per domain and use only what a handler needs
-— the gem's per-controller `current_ability` override:
+- the gem's per-controller `current_ability` override:
 
 ```rust
 // src/abilities/book.rs
@@ -60,7 +60,7 @@ async fn show(user: AuthUser, Path(id): Path<i64>) -> Result<Json<Book>, AppErro
 }
 ```
 
-The handler constructs only the ruleset it needs — the saving the gem
+The handler constructs only the ruleset it needs - the saving the gem
 advertises for controllers applies equally here.
 
 ## Merging

@@ -3,7 +3,7 @@
 Databases are good at optimizing queries, but a long rule list can still
 produce needlessly complex `WHERE`/`JOIN` clauses. Like the gem, the port
 compresses rules **at the adapter layer, automatically**, before translating
-them to a query. (`can_check` always evaluates the full rule list — in memory
+them to a query. (`can_check` always evaluates the full rule list - in memory
 the cost is negligible and precedence semantics are simpler unmodified.)
 
 The compressor lives in `cancancan_core::compress` and is enabled by default.
@@ -34,7 +34,7 @@ ability.can(Some("read"), Some("Book"))?;
 ability.cannot_where(Some("read"), Some("Book"), eq("private", true))?;
 ```
 
-Everything before the last unconditional `can` is unreachable — the catch-all
+Everything before the last unconditional `can` is unreachable - the catch-all
 already grants access, and later rules re-state the only exception.
 
 ## A leading catch-all `cannot` is removable

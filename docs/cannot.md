@@ -23,7 +23,7 @@ ability.can_check("destroy", &project);      // false
 
 Matching works the same as `can` does: the last matching rule wins, so
 defining `cannot` after `can` wins over a broader earlier `can`. If you
-reverse the order, the exception wins — which is dangerous.
+reverse the order, the exception wins - which is dangerous.
 
 The gem's own distinction holds:  `cannot` is the normalised complement of
-`can` — same rules, same ordering, same adapters.
+`can` - same rules, same ordering, same adapters.

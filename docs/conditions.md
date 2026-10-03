@@ -1,6 +1,6 @@
 # Conditions and values
 
-Conditions are the *data* of a rule — the port of the gem's hash of
+Conditions are the *data* of a rule - the port of the gem's hash of
 conditions. This page is the type reference; the usage guide is
 [hash of conditions](./hash_of_conditions.md).
 
@@ -22,7 +22,7 @@ pub enum Condition {
 }
 ```
 
-`#[non_exhaustive]` — match with a wildcard arm so future variants do not
+`#[non_exhaustive]` - match with a wildcard arm so future variants do not
 break your code.
 
 Key semantics:
@@ -34,7 +34,7 @@ Key semantics:
   (the gem *raises* in that situation; a boolean API cannot raise, so the
   rule simply does not match in memory while queries still enforce it).
   Detect with `ability.has_raw_sql(action, subject)`.
-- **`And(vec![])`** matches everything; **`Or(vec![])`** matches nothing —
+- **`And(vec![])`** matches everything; **`Or(vec![])`** matches nothing -
   the same vacuous-truth rules as the gem's compressor relies on (see
   [rules compression](./rules_compression.md)).
 
@@ -63,14 +63,14 @@ Condition::Range { field: "priority".into(), min: 1.into(), max: 3.into() }
 Condition::Eq { field: "title".into(), value: "Sir".into() }
 ```
 
-Equality between `DbValue`s is strict across variants — `Int(1) != Str("1")`.
+Equality between `DbValue`s is strict across variants - `Int(1) != Str("1")`.
 Adapters bind values with the column's SQL type, so the distinction matters
 in memory checks: build `DbValue`s from the same typed source as your model
 attributes (which the adapter integrations do automatically).
 
 ## Matchers: the non-data escape hatch
 
-When a rule cannot be expressed as data, attach a closure instead — see
+When a rule cannot be expressed as data, attach a closure instead - see
 [define abilities with matchers](./define_abilities_with_matchers.md).
 Matcher rules work for in-memory checks; `rules_for_query` rejects them
 (`CanCanError`) because there is no SQL to translate. The gem has the same

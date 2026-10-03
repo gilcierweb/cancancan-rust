@@ -29,25 +29,25 @@ let columns: cancancan_diesel::ColumnMap = std::collections::HashMap::from([
 let predicate = accessible_by::<posts::table>(&ability, "read", "Post", "posts", &columns)?;
 posts::table.filter(predicate).load(connection)?;
 
-// Diesel (fragment style — no typed predicate, works for every backend)
+// Diesel (fragment style - no typed predicate, works for every backend)
 use cancancan_diesel::{accessible_by_sql, condition_sql};
 let fragment = accessible_by_sql(&ability, "read", "Post", "posts")?;
 posts::table.filter(diesel::dsl::sql::<diesel::sql_types::Bool>(&fragment)).load(connection)?;
 
-// SeaORM — "easy compile with QueryFilter integration" [via Condition]
+// SeaORM - "easy compile with QueryFilter integration" [via Condition]
 use cancancan_seaorm::{accessible_by as sea_accessible_by, condition_to_sea, ColumnMap, ColumnType};
 
 let cond = sea_accessible_by(&ability, "read", "Post", "posts", &columns)?;
 Post::find().filter(cond).all(db).await?;
 
-// SQLx — composing into a sqlx QueryBuilder with placeholders
+// SQLx - composing into a sqlx QueryBuilder with placeholders
 use cancancan_sqlx::{accessible_by as sqlx_accessible_by, ColumnMap as SqlxColumnMap, ColumnType as SqlxColumnType};
 use sqlx::QueryBuilder;
 
 let mut qb = QueryBuilder::<sqlx::Sqlite>::new("SELECT id FROM posts WHERE ");
 sqlx_accessible_by(&mut qb, &ability, "read", "Post", "posts", &columns)?;
 
-// MongoDB — filter is a root Document to pass directly to `find`, `count_documents`, etc.
+// MongoDB - filter is a root Document to pass directly to `find`, `count_documents`, etc.
 use cancancan_mongo::{accessible_by as mongo_accessible_by, ColumnMap as MongoColumnMap, ColumnType as MongoColumnType};
 let columns: MongoColumnMap = std::collections::HashMap::from([
     ("user_id".to_owned(), MongoColumnType::Uuid),

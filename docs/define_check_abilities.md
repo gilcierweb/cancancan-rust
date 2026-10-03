@@ -15,7 +15,7 @@ ability.can_check("read", &article);         // check
 
 ## A concrete example
 
-Take a blog: "who can edit an article?" — "only the author."
+Take a blog: "who can edit an article?" - "only the author."
 
 ```rust
 use cancancan_core::{Ability, Condition, DbValue};
@@ -35,7 +35,7 @@ ability.can_check("update", &article); // => true when article.user_id == user.i
 ```
 
 Instances are checked through the `SubjectInstance` trait (implement it for
-your model, or use `RecordSubject`/map-backed subjects — see
+your model, or use `RecordSubject`/map-backed subjects - see
 [subjects](./subjects.md)).
 
 By default there are **no permissions**: nobody can do anything until a rule
@@ -93,7 +93,7 @@ ability.can_check("destroy", &article); // => true for admin
 
 ## Subjects
 
-The subject is usually a type name (`"Article"`), but any string works — for
+The subject is usually a type name (`"Article"`), but any string works - for
 example a dashboard gate:
 
 ```rust
@@ -109,17 +109,17 @@ grants full access:
 ability.can(Some("manage"), Some("all"))?;
 ```
 
-Note that this also covers `can_check_type("read", "admin_dashboard")` —
+Note that this also covers `can_check_type("read", "admin_dashboard")` -
 `manage` literally means any action.
 
 > Always **check** for the specific permission you care about
 > (`can_check("translate", &article)`), even if today only admins pass. Later
-> you can open the action to more roles by adding one rule — no call-site
+> you can open the action to more roles by adding one rule - no call-site
 > changes needed.
 
 ## Checking abilities of other users
 
-An `Ability` is just a value — build one for any user:
+An `Ability` is just a value - build one for any user:
 
 ```rust
 let other = ability_for(&some_user);

@@ -1,7 +1,7 @@
 # Accessible attributes
 
 You can use rule-registered attributes for both prefilling forms and
-filtering incoming parameters — the Rust port of the gem's strong-parameters
+filtering incoming parameters - the Rust port of the gem's strong-parameters
 family.
 
 ## Filling form fields with `attributes_for`

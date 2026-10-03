@@ -15,7 +15,7 @@ The only forwarded pattern at a system level is:
 ```rust
 let mut ability = Ability::new();
 ability.set_message_resolver(Arc::new(|action, subject| {
-    // Translate by resolver → I18n ("You are not authorized to…")
+    // Translate by resolver → I18n ("You are not authorized to...")
 }));
 ```
 

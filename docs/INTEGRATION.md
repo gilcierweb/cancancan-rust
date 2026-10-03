@@ -15,7 +15,7 @@ The three libraries are complementary, not overlapping by design:
 - `rolify-rust` answers what role(s) they call.
 - `cancancan-rust` decides what that role may do, per request, per record.
 
-## Pattern 1 — Axum + axum-login (recommended for new projects)
+## Pattern 1 - Axum + axum-login (recommended for new projects)
 
 1. Login logout via an `axum-login` auth layer.
 
@@ -74,7 +74,7 @@ let app = Router::new()
 The middleware returns 500 on any successful handler that forgets
 `authorize`, exactly the same as Rails `check_authorization`.
 
-## Pattern 2 — Actix + password-auth
+## Pattern 2 - Actix + password-auth
 
 There is no canonical session crate for actix-web yet; the simplest approach is
 `password-auth` (or your existing Devise replacement) plus middleware that maps
@@ -89,7 +89,7 @@ async fn register_ability(ability: &Ability, current_user: &UserImpl) -> Result<
     if current_user.has_role(rolify_core::RoleName::from("admin")).await? {
         ability.can(Some("manage"), Some("all"))?;
     }
-    /* more rules… */
+    /* more rules... */
     Ok(())
 }
 
@@ -112,10 +112,10 @@ handler. A common recipe:
 When checking *inside* a handler, use the extractor's `ability()` reference.
 For Rails-like authorization on a controller method, call one of:
 
-- `ability.authorize("read", &post)` — 403 if denied.
-- `ability.authorize_type("update", "Post")` — class-level check.
-- `ability.load_and_authorize("update", "Post", load_post(id))` — load once, then authorize.
-- `ability.skip_authorization_check()` — opt out in public handlers.
+- `ability.authorize("read", &post)` - 403 if denied.
+- `ability.authorize_type("update", "Post")` - class-level check.
+- `ability.load_and_authorize("update", "Post", load_post(id))` - load once, then authorize.
+- `ability.skip_authorization_check()` - opt out in public handlers.
 
 ## Error taxonomy (uniform across adapters)
 
@@ -134,5 +134,5 @@ For Rails-like authorization on a controller method, call one of:
   the controller layer are intentionally not ported (they encode Rails
   routing/hash conventions).
 - The scalar alias language from the gem (`:manage`, `:all`) is preserved;
-  there is no custom "my action" registration layer — use `alias_action` with
+  there is no custom "my action" registration layer - use `alias_action` with
   collision validation.

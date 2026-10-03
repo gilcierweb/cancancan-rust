@@ -1,27 +1,27 @@
 # Web integration
 
-The web crates — [`cancancan-axum`](../crates/cancancan-axum) and
-[`cancancan-actix`](../crates/cancancan-actix) — mirror the gem's
+The web crates - [`cancancan-axum`](../crates/cancancan-axum) and
+[`cancancan-actix`](../crates/cancancan-actix) - mirror the gem's
 `ControllerAdditions`. Each supplies:
 
 - an **extractor** `CurrentAbility` that pulls the current request's `Ability`
   from request extensions (axum `Extension` / actix `web::Data`), and offers:
   - `authorize(action, instance)` / `authorize_type(action, type_name)`
-    — mirrors `authorize!`. Fails with `403` on denial and marks the request.
-  - `load_and_authorize(action, subject_type, loader)` — mirror of
+    - mirrors `authorize!`. Fails with `403` on denial and marks the request.
+  - `load_and_authorize(action, subject_type, loader)` - mirror of
     `load_and_authorize_resource`: runs a loader returning `Option<Instance>`,
     maps `None` to `404`, loader errors to `500`, denies to `403`.
     Locks the same internal flag.
-  - `authorize_resource(action, instance)` — only the permission check
+  - `authorize_resource(action, instance)` - only the permission check
     (`mirror authorize_resource!`).
-  - `skip_authorization_check()` — call this freely when you intend not to
+  - `skip_authorization_check()` - call this freely when you intend not to
     authorize (HTML metaboxes etc.).
-  - `can_check(action, subject)` / `cannot_check` — mirrors `can?` / `cannot?`.
-  - **authorize for routes** — `middleware::from_fn(check_authorization)` wraps
+  - `can_check(action, subject)` / `cannot_check` - mirrors `can?` / `cannot?`.
+  - **authorize for routes** - `middleware::from_fn(check_authorization)` wraps
     the whole router and turns a missing-ability *and* missing-call case into
     a `500` (mirrors the gem's `check_authorization`/authorize-header flow);
     success-satisfied handlers without a call also surface as 500.
-  - `AuthorizationError` — wraps `CanCanError`; maps to the right HTTP codes.
+  - `AuthorizationError` - wraps `CanCanError`; maps to the right HTTP codes.
 
 ## Axum example
 

@@ -21,7 +21,7 @@ The resolved message surfaces in
 
 ## Lookup order
 
-Mirroring the gem's YAML nesting — from most specific to most general:
+Mirroring the gem's YAML nesting - from most specific to most general:
 
 ```yaml
 # gem equivalent, for reference
@@ -46,7 +46,7 @@ ability.set_message_resolver(|action, subject| {
 });
 ```
 
-Custom actions work the same way — `("vote", "Article")` is just another
+Custom actions work the same way - `("vote", "Article")` is just another
 key. When no key resolves, the default message is used:
 `"You are not authorized to access this page."` (the gem's default).
 
@@ -64,7 +64,7 @@ ability.set_message_resolver(|action, subject| {
 ```
 
 The resolver runs per ability, so different user locales are simply different
-resolvers — build the ability with the request's locale in scope:
+resolvers - build the ability with the request's locale in scope:
 
 ```rust
 let ability = ability_for(&user).with_locale(&request_locale);

@@ -41,15 +41,15 @@ WHERE "articles"."id" IN (
 All SQL adapters render `can` conditions joined with `OR`, `cannot`
 conditions with `AND NOT`, values as bind parameters. For
 [`Nested` conditions](./hash_of_conditions.md#traversing-associations)
-(association traversal — the gem's JOIN case) the adapters differ:
+(association traversal - the gem's JOIN case) the adapters differ:
 
 | adapter | nested-condition behavior |
 |---|---|
-| `cancancan-diesel` (typed) | `WrongAssociation` error — join metadata cannot be inferred from the condition alone |
+| `cancancan-diesel` (typed) | `WrongAssociation` error - join metadata cannot be inferred from the condition alone |
 | `cancancan-diesel` (fragment) | renders the raw fragment against the relation name (you control the JOIN in the query) |
 | `cancancan-sqlx` | `WrongAssociation` error (same rationale as typed Diesel) |
 | `cancancan-seaorm` | `WrongAssociation` error (same rationale) |
-| `cancancan-mongo` | flattens into dot-notation (`author.name`) — natural for embedded documents |
+| `cancancan-mongo` | flattens into dot-notation (`author.name`) - natural for embedded documents |
 
 So today, association-traversing rules on SQL backends are expressed with
 [`RawSql` conditions](./hash_of_conditions.md#raw-sql-fragments) over a query

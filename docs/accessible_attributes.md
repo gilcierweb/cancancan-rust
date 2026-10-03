@@ -1,7 +1,7 @@
 # Accessible attributes
 
 `cancancan-core` lets you define permissions on individual attributes of an
-instance — the port of the gem's attribute-level rules (traditionally used to
+instance - the port of the gem's attribute-level rules (traditionally used to
 feed Rails Strong Parameters).
 
 Given users may only read a user's first and last name:
@@ -23,7 +23,7 @@ ability.can_attributes(
 ```
 
 (`can_attributes` also has a `can_attributes_where` form when you need both
-attributes and a condition — see the API docs.)
+attributes and a condition - see the API docs.)
 
 ## Checking a single attribute
 
@@ -39,7 +39,7 @@ ability.can_check_attribute("read", &user, "password");   // => false
 ```
 
 The mirror-image `cannot_attributes` / `cannot_check_attribute` deny specific
-columns while leaving the rest allowed — attribute-level rules follow the same
+columns while leaving the rest allowed - attribute-level rules follow the same
 "last matching rule wins" semantics as everything else.
 
 ## Listing permitted attributes
@@ -60,8 +60,8 @@ let attrs = ability.permitted_attributes("read", "User");
 
 Typical uses:
 
-- **Form builders** — render one input per permitted attribute.
-- **Request validation** — intersect the inbound parameter keys with
+- **Form builders** - render one input per permitted attribute.
+- **Request validation** - intersect the inbound parameter keys with
   `permitted_attributes(action, subject_type)` before passing them to your
   model layer. In axum/actix this lives naturally in an extractor or in the
   handler before deserialization is committed (see
@@ -88,7 +88,7 @@ ability.can_where(
 )?;
 
 let initial = ability.attributes_for("create", "Project");
-// => { "active": Bool(true) } — prefill a form with these
+// => { "active": Bool(true) } - prefill a form with these
 ```
 
 Only simple equality conditions contribute values; ranges, lists, nested and

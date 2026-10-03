@@ -1,4 +1,4 @@
-# Defining abilities — best practices
+# Defining abilities - best practices
 
 The core rule engine of `cancancan-core` takes the same design cues as the
 Ruby gem, but since the DSL is now a call in a typed language, some Ruby
@@ -18,7 +18,7 @@ ability.can_where(
 )?;
 ```
 
-At adapter level, `can_where` is SQL-expressible — it filters a query the
+At adapter level, `can_where` is SQL-expressible - it filters a query the
 same way the rule filters a controller authorization chain. Compare with:
 
 ```rust
@@ -73,5 +73,5 @@ a.cannot_where( // last_matching takes priority
 )?;
 ```
 
-Rule order *is* load-and-combine order — the gem says it and the port
+Rule order *is* load-and-combine order - the gem says it and the port
 honors it.

@@ -1,4 +1,4 @@
-# Check abilities — avoid common mistakes
+# Check abilities - avoid common mistakes
 
 You know `can_check` works on an instance:
 
@@ -10,7 +10,7 @@ and `cannot_check` is the opposite check. You can also ask about a **type**
 instead of an instance:
 
 ```rust
-// "may the user read *some* project?" — e.g. to render a link
+// "may the user read *some* project?" - e.g. to render a link
 if ability.can_check_type("create", "Project") {
     // show <a href="/projects/new">New Project</a>
 }
@@ -28,8 +28,8 @@ ability.can_where(Some("read"), Some("Project"),
 ability.can_check_type("read", "Project"); // => true
 ```
 
-The question cannot be answered precisely — a type has no `priority` to
-compare — so the port, like the gem, reads it as *"can the user read **a**
+The question cannot be answered precisely - a type has no `priority` to
+compare - so the port, like the gem, reads it as *"can the user read **a**
 project?"* and answers `true`.
 
 Consequences:
@@ -61,7 +61,7 @@ assert_eq!(editable, total);
 
 ## Instance checks always evaluate conditions
 
-`can_check`/`authorize` on an instance never skip the condition tree —
+`can_check`/`authorize` on an instance never skip the condition tree -
 equality, ranges, `Nested`, everything is enforced. Only
 [`RawSql`](./hash_of_conditions.md#raw-sql-fragments) conditions are
 non-matching in memory (fail-closed); detect those with

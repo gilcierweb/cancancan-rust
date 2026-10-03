@@ -4,13 +4,13 @@
 Rust API](../crates/cancancan-core/src/ability.rs). Checking (`can?` /
 `cannot?` in the gem) becomes:
 
-- `ability.can_check(action, instance)` — instance-level check. Conditions
+- `ability.can_check(action, instance)` - instance-level check. Conditions
   and matchers are evaluated; returned as `bool`.
-- `ability.can_check_type(action, "TypeName")` — type-level check. Conditions
-  and matchers intentionally do not run here — only `can`/`cannot` subjects
+- `ability.can_check_type(action, "TypeName")` - type-level check. Conditions
+  and matchers intentionally do not run here - only `can`/`cannot` subjects
   decide. This matches the gem's "Class" check semantics.
-- `ability.cannot_check(...)` / `ability.cannot_check_type(...)` — mirrors
-  `cannot?` — negated version of the above.
+- `ability.cannot_check(...)` / `ability.cannot_check_type(...)` - mirrors
+  `cannot?` - negated version of the above.
 
 A living example gets passed to `RulesProcessor`:
 

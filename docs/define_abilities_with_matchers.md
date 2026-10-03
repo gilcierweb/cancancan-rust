@@ -1,7 +1,7 @@
 # Define abilities with matchers
 
 Matcher rules are the direct port of the gem's "block" abilities. They are
-relevant only for instance-level checks — database adapters reject them
+relevant only for instance-level checks - database adapters reject them
 (`BlockInQuery`).
 
 ## `can_matching` and `cannot_matching`
@@ -42,11 +42,11 @@ Opt-out with plain has_matcher detection:
 ```rust
 let has = ability.has_matcher("update", "Post");
 ```
-Catch-and-drop matching can work up to and including testing — an alternative to
+Catch-and-drop matching can work up to and including testing - an alternative to
 the gem's "assume falsely" approach.
 
 ## When to write matchers
 
-- Full logic of the form ("any post, related comment, likes") — integrity
+- Full logic of the form ("any post, related comment, likes") - integrity
   rules that can't be expressed in SQL at compile time.
 - Frozen state (checks that depend on receiving data by pointer).

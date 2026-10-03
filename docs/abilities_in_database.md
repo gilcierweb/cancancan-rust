@@ -1,7 +1,7 @@
 # Storing abilities in the database
 
 The gem's idea ("store rules in DB so admins tweak them at runtime") works in
-Rust as well — but the `Ability` itself remains an in-memory type. You bridge
+Rust as well - but the `Ability` itself remains an in-memory type. You bridge
 both: load rules from the DB and register them into `Ability`.
 
 `Permission` in the gem is sidestepped: for many Rust apps a "view entity" or
@@ -30,7 +30,7 @@ pub fn ability_for(user_id: i64) -> Ability {
 }
 ```
 
-This maps exactly to the gem's approach — loop on Permission records as
+This maps exactly to the gem's approach - loop on Permission records as
 `can`/`cannot` rules.
 
 ## When to use this

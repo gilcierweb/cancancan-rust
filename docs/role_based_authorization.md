@@ -1,6 +1,6 @@
 # Role-based authorization
 
-`cancancan-core` is decoupled from how you model roles — it only sees the
+`cancancan-core` is decoupled from how you model roles - it only sees the
 rules you register. This page shows the common Rust setups, adapted from the
 gem's role guide. For roles persisted in a database with a dedicated crate,
 see [INTEGRATION.md](./INTEGRATION.md) (`rolify-rust`).
@@ -91,7 +91,7 @@ A superadmin manages all three; a moderator only `Post`.
 
 ## Inheritance inside the ability builder
 
-Alternatively, keep the chain in the builder itself — one function per role,
+Alternatively, keep the chain in the builder itself - one function per role,
 higher roles call lower ones:
 
 ```rust
@@ -115,5 +115,5 @@ fn admin(a: &mut Ability) {
 ```
 
 This composes naturally with [`merge`](./combine_abilities.md#merging-ability-objects)
-when abilities live in different modules — see
+when abilities live in different modules - see
 [splitting abilities](./split_ability.md).

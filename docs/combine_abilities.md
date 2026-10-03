@@ -34,7 +34,7 @@ ability.cannot(Some("destroy"), Some("Project"))?;
 Reversed, the `can "manage"` would override `cannot "destroy"` and the user
 could delete projects again.
 
-Adding more `can` rules does not override earlier rules — they combine with
+Adding more `can` rules does not override earlier rules - they combine with
 logical OR:
 
 ```rust
@@ -49,7 +49,7 @@ locked.
 
 ## Role inheritance through ordering
 
-The same mechanism supports inherited roles — an admin who keeps the
+The same mechanism supports inherited roles - an admin who keeps the
 moderator's rules but regains `destroy`:
 
 ```rust
@@ -70,7 +70,7 @@ denial.
 
 ## Merging ability objects
 
-Independent rule sets can be composed with `merge` — the port behavior for
+Independent rule sets can be composed with `merge` - the port behavior for
 splitting definitions across modules (see
 [splitting abilities](./split_ability.md)):
 
@@ -80,6 +80,6 @@ ability.merge(&comment_abilities(&user));
 ```
 
 Rules from `other` are appended, so merged rules take precedence where both
-match — same ordering semantics as writing them inline.
+match - same ordering semantics as writing them inline.
 
 Next: [define abilities with matchers](./define_abilities_with_matchers.md).

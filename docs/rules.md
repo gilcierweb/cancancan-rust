@@ -7,13 +7,13 @@ into a matched pipeline. Everything else depends on this definition step.
 
 A rule has four parts:
 
-- **`action`** — the action name as writing used (e.g. `"read"`).
-- **`subject`** — a subject identifier like `"Post"` (a class name), an
+- **`action`** - the action name as writing used (e.g. `"read"`).
+- **`subject`** - a subject identifier like `"Post"` (a class name), an
   association name like `"post.author"`, or the wildcard `"all"`.
-- **condition** — conditions data values (see [Conditions](./conditions.md)).
-- **attributes** — attribute names allowed/denied under that rule (strong
-  parameters semantics — see [Attributes](attributes.md)).
-- *(optional)* **matcher** — callback-based rule that invokes the closure
+- **condition** - conditions data values (see [Conditions](./conditions.md)).
+- **attributes** - attribute names allowed/denied under that rule (strong
+  parameters semantics - see [Attributes](attributes.md)).
+- *(optional)* **matcher** - callback-based rule that invokes the closure
   instead of evaluating a condition.
 
 Rule ordering: **the last matching rule wins** (mirroring the gem's matching semantics).

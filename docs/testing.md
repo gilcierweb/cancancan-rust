@@ -1,7 +1,7 @@
 # Testing
 
 This is an authorization library. Testing the permissions you defined is not
-important — **it is essential**.
+important - **it is essential**.
 
 Be careful when defining abilities, and even more careful when testing them.
 
@@ -24,7 +24,7 @@ fn user_can_only_destroy_own_projects() {
 }
 ```
 
-(The helper shapes — `user(...)`, `project(...)` — are whatever factory
+(The helper shapes - `user(...)`, `project(...)` - are whatever factory
 functions your codebase already has; `RecordSubject` or your
 `SubjectInstance` impls work directly.)
 
@@ -44,7 +44,7 @@ fn destroy_account(#[case] role: &str, #[case] allowed: bool) {
 ## Query-layer tests
 
 When you use the [query adapters](./query-adapters.md), test that the
-generated query returns exactly the accessible rows — the in-memory and SQL
+generated query returns exactly the accessible rows - the in-memory and SQL
 paths must agree:
 
 ```rust

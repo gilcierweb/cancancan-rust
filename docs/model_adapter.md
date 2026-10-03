@@ -11,7 +11,7 @@
 | `cancancan-mongo`  | MongoDB (`bson` documents)       | stable       |
 
 See [query adapters](./query-adapters.md) for usage. This page is about
-writing **your own** adapter — the port of the gem's `AbstractAdapter`.
+writing **your own** adapter - the port of the gem's `AbstractAdapter`.
 
 ## What an adapter does
 
@@ -19,11 +19,11 @@ An adapter answers one question: *given the rules relevant to an
 `(action, subject)` pair, produce a query that returns exactly the authorized
 rows.* The pipeline is always:
 
-1. `ability.rules_for_query(action, subject_type)` — the surviving rules
+1. `ability.rules_for_query(action, subject_type)` - the surviving rules
    (cannot-rules, matchers and raw-SQL handling already applied; see
    [rules](./rules.md)). Rules arrive in precedence order.
 2. Optionally `cancancan_core::compress(rules)` when
-   `rules_compressor_enabled()` is on — see
+   `rules_compressor_enabled()` is on - see
    [rules compression](./rules_compression.md).
 3. Translate each rule's `Condition` tree into the backend's filter DSL.
 4. Combine: `can` rules OR together, `cannot` rules subtract (AND NOT),
@@ -31,7 +31,7 @@ rows.* The pipeline is always:
 
 And the invariant from the gem, unchanged: **if no rules match the
 `(action, subject)` pair, the adapter must return a query that yields zero
-rows** — never an unfiltered `SELECT *`.
+rows** - never an unfiltered `SELECT *`.
 
 ## A minimal custom adapter
 
@@ -76,10 +76,10 @@ fn translate(c: &Condition) -> MyFilter {
 
 Follow the gem's TDD recipe (its example is the Mongoid adapter):
 
-1. **Empty-rule behavior** — no rules ⇒ zero rows.
-2. **Round-trip** — insert rows, run the generated query, assert the result
+1. **Empty-rule behavior** - no rules => zero rows.
+2. **Round-trip** - insert rows, run the generated query, assert the result
    equals the in-memory `can_check` verdict for every row.
-3. **Cannot rules** — a broad `can` followed by `cannot` must exclude the
+3. **Cannot rules** - a broad `can` followed by `cannot` must exclude the
    denied subset.
 
 ```rust
@@ -99,5 +99,5 @@ fn returns_only_accessible_rows() {
 ```
 
 The shipped adapters (`cancancan-diesel`'s typed and fragment paths, the
-`cancancan-mongo` BSON translator) are the reference implementations — read
+`cancancan-mongo` BSON translator) are the reference implementations - read
 them before starting a new backend.

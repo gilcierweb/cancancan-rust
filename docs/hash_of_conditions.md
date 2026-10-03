@@ -1,4 +1,4 @@
-# Defining abilities — conditions
+# Defining abilities - conditions
 
 In [Define and check abilities](./define_check_abilities.md) we wrote:
 
@@ -11,7 +11,7 @@ ability.can_where(
 ```
 
 to say an article can only be updated by its author. The third argument of
-`can_where` is the **condition** — the port of the gem's *hash of
+`can_where` is the **condition** - the port of the gem's *hash of
 conditions*. It restricts which records the permission applies to.
 
 Conditions are data, not callbacks: they are evaluated in memory by

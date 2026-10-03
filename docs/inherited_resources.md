@@ -1,6 +1,6 @@
 # Inherited Resources / nested resources
 
-> **Status: not ported — Rails-specific by design.**
+> **Status: not ported - Rails-specific by design.**
 
 The gem's `inherited_resources.md` and `nested_resources.md` describe the
 integration with the InheritedResources Rails controller pattern and with
@@ -9,7 +9,7 @@ shallow/nested Rails routes (`load_and_authorize_resource :project` +
 Rails-specific controller stacks.
 
 `cancancan-rust` targets Rust web frameworks (axum, actix-web) where route
-nesting and resource loading are explicit handler/extractor code — there is
+nesting and resource loading are explicit handler/extractor code - there is
 no equivalent controller superclass to integrate with.
 
 ## The port's answer to nested authorization

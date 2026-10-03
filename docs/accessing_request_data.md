@@ -1,6 +1,6 @@
 # Accessing request data
 
-What if permissions depend on something outside the user object — say,
+What if permissions depend on something outside the user object - say,
 forbidding certain IP addresses from creating comments? In the gem you
 override `current_ability` in `ApplicationController` to pass
 `request.remote_ip` in. The port has no controller mixin: **you** own the
@@ -47,7 +47,7 @@ async fn handler(
 
 ## In actix-web
 
-Same idea — the `CurrentAbility` extractor receives the
+Same idea - the `CurrentAbility` extractor receives the
 `HttpRequest`-derived data, so peer IP, headers or session values are all
 available before rules are registered.
 
@@ -60,7 +60,7 @@ Anything the rules may legitimately depend on:
 - **tenant header** (`X-Tenant-Id` scoping every condition)
 - **feature flags** for gradual rollouts
 
-Resist moving *authorization data* into the context — roles and ownership
+Resist moving *authorization data* into the context - roles and ownership
 belong in the database. The context is for request-scoped facts only; rules
 stay pure and testable:
 

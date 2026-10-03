@@ -33,7 +33,7 @@ pub trait SubjectInstance {
 }
 ```
 
-Implement it per model — or derive it via the framework integrations, which
+Implement it per model - or derive it via the framework integrations, which
 blanket-provide it for Diesel `Queryable` structs / SeaORM entities:
 
 ```rust
@@ -72,7 +72,7 @@ ability.can(Some("read"), Some("admin_dashboard"))?;
 ability.can_check_type("read", "admin_dashboard"); // => true
 ```
 
-Strings are compared exactly — nothing is singularized or camelized, so pick
+Strings are compared exactly - nothing is singularized or camelized, so pick
 one convention and stick to it.
 
 ## Map-backed subjects for dynamic data
@@ -90,5 +90,5 @@ let doc = RecordSubject::new("Document", [
 ability.can_check("read", &doc);
 ```
 
-This is also the quickest way to write ability unit tests — see
+This is also the quickest way to write ability unit tests - see
 [testing](./testing.md).

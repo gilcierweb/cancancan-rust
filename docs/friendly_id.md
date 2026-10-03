@@ -1,14 +1,14 @@
 # FriendlyId / slug lookups
 
-> **Status: not applicable / not ported — by design.**
+> **Status: not applicable / not ported - by design.**
 
 The gem's FriendlyId guide patches `ActiveRecordAdapter.find` so that
 `load_and_authorize_resource` can look records up by slug instead of id. That
 hook exists because the gem *ships the find*: `load_resource` calls
 `model_class.find(id)` internally.
 
-`cancancan-rust` never fetches your records. Loading is your code — a
-repository call, a Diesel `filter(slug.eq(&slug))`, whatever fits — and
+`cancancan-rust` never fetches your records. Loading is your code - a
+repository call, a Diesel `filter(slug.eq(&slug))`, whatever fits - and
 authorization runs on the instance you loaded:
 
 ```rust
@@ -29,7 +29,7 @@ async fn show(
 ```
 
 Because the port authorizes *instances and conditions* rather than the find
-itself, there is no adapter method to patch — slug support needs no
+itself, there is no adapter method to patch - slug support needs no
 integration.
 
 If you want the safer "403 vs 404" behavior described in
