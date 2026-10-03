@@ -1,0 +1,19 @@
+[package]
+name = "cancancan-sqlx"
+version.workspace = true
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+
+[dependencies]
+cancancan-core = { path = "../cancancan-core" }
+sqlx = { workspace = true }
+uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+sqlx = { workspace = true, features = ["sqlite", "postgres", "mysql", "runtime-tokio"] }
+libsqlite3-sys = { workspace = true }
+tokio = { version = "1", features = ["rt", "macros"] }
+
+[lints]
+workspace = true
