@@ -39,6 +39,7 @@ mod config;
 mod error;
 mod messages;
 mod rule;
+mod validation;
 
 pub use ability::{Ability, AbilityPermissions, MessageResolver, SubjectRef};
 pub use actions::Actions;
@@ -48,3 +49,4 @@ pub use config::{rules_compressor_enabled, set_rules_compressor_enabled};
 pub use error::CanCanError;
 pub use messages::default_message;
 pub use rule::{BlockMatcher, Rule};
+pub use validation::is_identifier;

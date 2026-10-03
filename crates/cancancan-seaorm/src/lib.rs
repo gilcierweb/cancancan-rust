@@ -103,22 +103,13 @@ fn as_f32(value: f64) -> f32 {
 }
 
 fn column_expr(table_name: &str, columns: &ColumnMap, field: &str) -> Result<Expr, CanCanError> {
-    if !is_identifier(field) {
+    if !cancancan_core::is_identifier(field) {
         return Err(CanCanError::AttributeArgument);
     }
     if !columns.contains_key(field) {
         return Err(CanCanError::AttributeArgument);
     }
     Ok(Expr::col((Alias::new(table_name), Alias::new(field))))
-}
-
-fn is_identifier(name: &str) -> bool {
-    let mut chars = name.chars();
-    match chars.next() {
-        Some(first) if first.is_ascii_alphabetic() || first == '_' => {}
-        _ => return false,
-    }
-    chars.all(|item| item.is_ascii_alphanumeric() || item == '_')
 }
 
 fn column_type_of(columns: &ColumnMap, field: &str) -> ColumnType {

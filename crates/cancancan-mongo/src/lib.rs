@@ -197,7 +197,7 @@ fn render_condition(
             relation,
             condition,
         } => {
-            if !is_identifier(relation) {
+            if !cancancan_core::is_identifier(relation) {
                 return Err(CanCanError::WrongAssociation(relation.clone()));
             }
             let mut deeper = path.to_vec();
@@ -296,7 +296,7 @@ fn is_null_doc(
 }
 
 fn qualified_field(path: &[String], field: &str) -> Result<String, CanCanError> {
-    if !is_identifier(field) {
+    if !cancancan_core::is_identifier(field) {
         return Err(CanCanError::AttributeArgument);
     }
     let mut qualified = path.to_vec();
@@ -309,15 +309,6 @@ fn lookup(columns: &ColumnMap, field: &str) -> Result<ColumnType, CanCanError> {
         .get(field)
         .copied()
         .ok_or(CanCanError::AttributeArgument)
-}
-
-fn is_identifier(name: &str) -> bool {
-    let mut chars = name.chars();
-    match chars.next() {
-        Some(first) if first.is_ascii_alphabetic() || first == '_' => {}
-        _ => return false,
-    }
-    chars.all(|item| item.is_ascii_alphanumeric() || item == '_')
 }
 
 fn db_value_to_bson(value: &DbValue, column_type: ColumnType) -> Result<bson::Bson, CanCanError> {

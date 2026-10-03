@@ -460,22 +460,13 @@ pub(crate) fn lookup(
     columns: &ColumnMap,
     field: &str,
 ) -> Result<(String, ColumnType), CanCanError> {
-    if !is_identifier(field) {
+    if !cancancan_core::is_identifier(field) {
         return Err(CanCanError::AttributeArgument);
     }
     columns
         .get(field)
         .map(|column_type| (field.to_owned(), *column_type))
         .ok_or(CanCanError::AttributeArgument)
-}
-
-pub(crate) fn is_identifier(name: &str) -> bool {
-    let mut chars = name.chars();
-    match chars.next() {
-        Some(first) if first.is_ascii_alphabetic() || first == '_' => {}
-        _ => return false,
-    }
-    chars.all(|item| item.is_ascii_alphanumeric() || item == '_')
 }
 
 pub(crate) fn as_i16(value: &DbValue) -> Result<i16, CanCanError> {

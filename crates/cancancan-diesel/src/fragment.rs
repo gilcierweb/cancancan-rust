@@ -117,7 +117,7 @@ fn render_condition(condition: &Condition, table: &str) -> Result<String, CanCan
             relation,
             condition,
         } => {
-            if !is_identifier(relation) {
+            if !cancancan_core::is_identifier(relation) {
                 return Err(CanCanError::WrongAssociation(relation.clone()));
             }
             render_condition(condition, relation)
@@ -165,20 +165,12 @@ fn in_list(
 }
 
 fn qualified(table: &str, field: &str) -> Result<String, CanCanError> {
-    if !is_identifier(table) || !is_identifier(field) {
+    if !cancancan_core::is_identifier(table) || !cancancan_core::is_identifier(field) {
         return Err(CanCanError::AttributeArgument);
     }
     Ok(format!("\"{table}\".\"{field}\""))
 }
 
-fn is_identifier(name: &str) -> bool {
-    let mut chars = name.chars();
-    match chars.next() {
-        Some(first) if first.is_ascii_alphabetic() || first == '_' => {}
-        _ => return false,
-    }
-    chars.all(|item| item.is_ascii_alphanumeric() || item == '_')
-}
 
 fn value_sql(value: &DbValue) -> Result<String, CanCanError> {
     match value {

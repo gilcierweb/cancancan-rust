@@ -342,7 +342,10 @@ fn push_qualified<DB>(
 where
     DB: Database,
 {
-    if !columns.contains_key(field) || !is_identifier(table_name) || !is_identifier(field) {
+    if !columns.contains_key(field)
+        || !cancancan_core::is_identifier(table_name)
+        || !cancancan_core::is_identifier(field)
+    {
         return Err(CanCanError::AttributeArgument);
     }
     builder.push("\"").push(table_name.to_owned()).push("\".\"");
@@ -428,13 +431,4 @@ fn coerce_value(value: &DbValue, column_type: ColumnType) -> Result<BoundValue, 
         },
         _ => Err(CanCanError::AttributeArgument),
     }
-}
-
-fn is_identifier(name: &str) -> bool {
-    let mut chars = name.chars();
-    match chars.next() {
-        Some(first) if first.is_ascii_alphabetic() || first == '_' => {}
-        _ => return false,
-    }
-    chars.all(|item| item.is_ascii_alphanumeric() || item == '_')
 }
