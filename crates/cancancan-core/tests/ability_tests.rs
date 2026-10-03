@@ -3,7 +3,7 @@ mod common;
 use cancancan_core::{Ability, CanCanError, Condition, DbValue};
 use common::{MapSubject, Post, User};
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 
 fn owner_ability() -> Ability {
     let mut ability = Ability::new();
@@ -131,7 +131,7 @@ fn block_matcher_decides_at_check_time() {
         .can_matching(
             Some("read"),
             Some("Post"),
-            Rc::new(|instance| instance.attribute("published") == Some(DbValue::Bool(true))),
+            Arc::new(|instance| instance.attribute("published") == Some(DbValue::Bool(true))),
         )
         .unwrap();
 
@@ -174,14 +174,14 @@ fn authorize_ok_on_success_and_denied_on_failure() {
 #[test]
 fn custom_message_resolver_overrides_default() {
     let mut ability = owner_ability();
-    ability.set_message_resolver(Rc::new(|_, _| Some("Nao autorizado.".to_owned())));
+    ability.set_message_resolver(Arc::new(|_, _| Some("Not authorized.".to_owned())));
     let error = ability.authorize("read", &Post::owned(2, 2)).unwrap_err();
     assert_eq!(
         error,
         CanCanError::AccessDenied {
             action: "read".to_owned(),
             subject: "Post".to_owned(),
-            message: Some("Nao autorizado.".to_owned()),
+            message: Some("Not authorized.".to_owned()),
         }
     );
 }
@@ -286,7 +286,7 @@ fn nested_condition_matches_through_association() {
 fn rules_for_query_rejects_block_rules() {
     let mut ability = Ability::new();
     ability
-        .can_matching(Some("read"), Some("Post"), Rc::new(|_| true))
+        .can_matching(Some("read"), Some("Post"), Arc::new(|_| true))
         .unwrap();
     assert_eq!(
         ability.rules_for_query("read", "Post").unwrap_err(),
