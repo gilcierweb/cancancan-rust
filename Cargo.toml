@@ -16,10 +16,16 @@ diesel = { version = "2.2", default-features = false }
 sea-query = { version = "0.32", default-features = false, features = ["with-uuid", "backend-postgres", "backend-sqlite"] }
 sqlx = { version = "0.8", default-features = false }
 bson = { version = "2", default-features = false }
+axum = { version = "0.8", default-features = false }
+actix-web = "4"
+futures = "0.3"
+tower = "0.5"
 rstest = "0.27"
 pretty_assertions = "1.4"
 libsqlite3-sys = { version = "0.28", features = ["bundled"] }
 cancancan-core = { path = "crates/cancancan-core" }
+cancancan-axum = { path = "crates/cancancan-axum" }
+cancancan-actix = { path = "crates/cancancan-actix" }
 
 [workspace.lints.rust]
 unsafe_code = "warn"
