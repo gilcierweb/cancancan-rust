@@ -40,4 +40,8 @@ pub enum CanCanError {
     /// Raised when a nested condition references an unknown association.
     #[error("unknown association in conditions: {0}")]
     WrongAssociation(String),
+
+    /// Raised when a raw SQL condition reaches an adapter without SQL support.
+    #[error("raw SQL conditions are not supported by the {0} adapter")]
+    RawSqlNotSupported(&'static str),
 }
